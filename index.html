@@ -3,7 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Niken's Cake Store - Toko Kue Premium</title>
+    <title>Niken's Cake Store - Toko Kue Premium Terbaik</title>
+    <meta name="description" content="Niken's Cake Store - Toko kue premium dengan rasa terbaik. Kue ulang tahun, pernikahan, custom order. Free delivery Jakarta. Developed by Ricco">
+    <meta name="keywords" content="kue, cake, toko kue, kue ulang tahun, kue pernikahan, kue custom, Niken's Cake Store">
+    <meta name="author" content="Ricco">
+    
+    <!-- Google Verification -->
+    <meta name="google-site-verification" content="google723d0321f3ef97dc.html" />
+    
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="style.css">
 </head>
@@ -160,6 +167,25 @@
                 </div>
                 <button type="submit" class="btn">Login</button>
             </form>
+        </div>
+    </div>
+
+    <!-- Cart Modal -->
+    <div class="modal" id="cartModal">
+        <div class="modal-content cart-modal">
+            <div class="modal-header">
+                <h3>🛒 Keranjang Belanja</h3>
+                <button class="close-modal close-cart-modal">&times;</button>
+            </div>
+            <div class="cart-items" id="cartItems">
+                <!-- Cart items will be rendered here -->
+            </div>
+            <div class="cart-footer">
+                <div class="cart-total">
+                    Total: <span id="cartTotal">Rp 0</span>
+                </div>
+                <button class="btn checkout-btn" onclick="checkout()">Checkout Sekarang</button>
+            </div>
         </div>
     </div>
 
