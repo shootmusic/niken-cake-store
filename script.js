@@ -27,22 +27,13 @@ const products = [
         price: 320000,
         image: "https://images.unsplash.com/photo-1578985545062-69928b1d9587?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1089&q=80",
         description: "Kue pelangi colorful dengan lapisan berwarna-warni"
-    },
-    {
-        id: 5,
-        name: "Tiramisu Classic",
-        price: 270000,
-        image: "https://images.unsplash.com/photo-1571877227200-a0d98ea607e9?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1887&q=80",
-        description: "Tiramisu authentic dengan kopi Italia"
-    },
-    {
-        id: 6,
-        name: "Cheesecake Premium",
-        price: 290000,
-        image: "https://images.unsplash.com/photo-1567306301408-9b74779a11af?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80",
-        description: "Cheesecake lembut dengan topping buah segar"
     }
 ];
+
+// Cart System
+let cart = [];
+let cartCount = 0;
+const cartCountElement = document.querySelector('.cart-count');
 
 // Render Produk
 function renderProducts() {
@@ -65,66 +56,155 @@ function renderProducts() {
     });
 }
 
-// Admin Login Modal
-const adminBtn = document.getElementById('adminBtn');
-const adminModal = document.getElementById('adminModal');
-const closeModal = document.querySelector('.close-modal');
-
-adminBtn.addEventListener('click', () => {
-    adminModal.style.display = 'flex';
-});
-
-closeModal.addEventListener('click', () => {
-    adminModal.style.display = 'none';
-});
-
-window.addEventListener('click', (e) => {
-    if (e.target === adminModal) {
-        adminModal.style.display = 'none';
-    }
-});
-
-// Admin Login Form
-const adminLoginForm = document.getElementById('adminLoginForm');
-adminLoginForm.addEventListener('submit', (e) => {
-    e.preventDefault();
-    const username = document.getElementById('adminUsername').value;
-    const password = document.getElementById('adminPassword').value;
+// Add to Cart Function
+function addToCart(productId) {
+    const product = products.find(p => p.id === productId);
+    const existingItem = cart.find(item => item.id === productId);
     
-    // Simulasi login admin
-    if (username === 'admin' && password === 'admin123') {
-        alert('Login berhasil! Dashboard admin Niken\'s Cake Store akan segera tersedia.');
-        adminModal.style.display = 'none';
-        // Di sini bisa redirect ke halaman admin
+    if (existingItem) {
+        existingItem.quantity += 1;
     } else {
-        alert('Username atau password salah!');
+        cart.push({
+            ...product,
+            quantity: 1
+        });
     }
+    
+    cartCount++;
+    updateCartUI();
+    showNotification(`${product.name} ditambahkan ke keranjang!`);
+}
+
+// Update Cart UI
+function updateCartUI() {
+    cartCountElement.textContent = cartCount;
+    
+    // Update cart modal if open
+    if (document.getElementById('cartModal').style.display === 'flex') {
+        renderCartModal();
+    }
+}
+
+// Render Cart Modal
+function renderCartModal() {
+    const cartItems = document.getElementById('cartItems');
+    const cartTotal = document.getElementById('cartTotal');
+    
+    if (cart.length === 0) {
+        cartItems.innerHTML = '<p class="empty-cart">Keranjang belanja kosong</p>';
+        cartTotal.textContent = 'Rp 0';
+        return;
+    }
+    
+    let total = 0;
+    cartItems.innerHTML = '';
+    
+    cart.forEach(item => {
+        const itemTotal = item.price * item.quantity;
+        total += itemTotal;
+        
+        const cartItem = document.createElement('div');
+        cartItem.className = 'cart-item';
+        cartItem.innerHTML = `
+            <div class="cart-item-info">
+                <h4>${item.name}</h4>
+                <p>Rp ${item.price.toLocaleString('id-ID')}</p>
+            </div>
+            <div class="cart-item-controls">
+                <button class="quantity-btn" data-id="${item.id}" data-action="decrease">−</button>
+                <span class="quantity">${item.quantity}</span>
+                <button class="quantity-btn" data-id="${item.id}" data-action="increase">+</button>
+                <button class="remove-btn" data-id="${item.id}">🗑️</button>
+            </div>
+        `;
+        cartItems.appendChild(cartItem);
+    });
+    
+    cartTotal.textContent = `Rp ${total.toLocaleString('id-ID')}`;
+}
+
+// Cart Modal System
+const cartModal = document.getElementById('cartModal');
+const closeCartModal = document.querySelector('.close-cart-modal');
+
+// Open Cart Modal
+document.querySelector('.cart-icon').addEventListener('click', (e) => {
+    e.preventDefault();
+    cartModal.style.display = 'flex';
+    renderCartModal();
 });
 
-// Cart Functionality
-let cartCount = 0;
-const cartCountElement = document.querySelector('.cart-count');
+// Close Cart Modal
+closeCartModal.addEventListener('click', () => {
+    cartModal.style.display = 'none';
+});
 
+// Cart Item Controls
 document.addEventListener('click', (e) => {
+    // Add to Cart
     if (e.target.classList.contains('add-to-cart')) {
-        cartCount++;
-        cartCountElement.textContent = cartCount;
-        
-        // Animasi tambah ke keranjang
-        const button = e.target;
-        const originalText = button.textContent;
-        button.textContent = 'Ditambahkan!';
-        button.style.backgroundColor = '#4CAF50';
-        
-        setTimeout(() => {
-            button.textContent = originalText;
-            button.style.backgroundColor = '';
-        }, 1500);
-        
-        // Show notification
-        showNotification('Produk berhasil ditambahkan ke keranjang!');
+        const productId = parseInt(e.target.dataset.id);
+        addToCart(productId);
+    }
+    
+    // Quantity Controls
+    if (e.target.classList.contains('quantity-btn')) {
+        const productId = parseInt(e.target.dataset.id);
+        const action = e.target.dataset.action;
+        updateQuantity(productId, action);
+    }
+    
+    // Remove Item
+    if (e.target.classList.contains('remove-btn')) {
+        const productId = parseInt(e.target.dataset.id);
+        removeFromCart(productId);
     }
 });
+
+// Update Quantity
+function updateQuantity(productId, action) {
+    const item = cart.find(item => item.id === productId);
+    
+    if (action === 'increase') {
+        item.quantity += 1;
+        cartCount++;
+    } else if (action === 'decrease' && item.quantity > 1) {
+        item.quantity -= 1;
+        cartCount--;
+    }
+    
+    updateCartUI();
+}
+
+// Remove from Cart
+function removeFromCart(productId) {
+    const itemIndex = cart.findIndex(item => item.id === productId);
+    if (itemIndex > -1) {
+        cartCount -= cart[itemIndex].quantity;
+        cart.splice(itemIndex, 1);
+        updateCartUI();
+        showNotification('Item dihapus dari keranjang');
+    }
+}
+
+// Checkout Function
+function checkout() {
+    if (cart.length === 0) {
+        showNotification('Keranjang kosong! Tambah produk dulu ya.');
+        return;
+    }
+    
+    const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+    
+    // Simulate order process
+    showNotification(`Order berhasil! Total: Rp ${total.toLocaleString('id-ID')}. Admin akan menghubungi Anda.`);
+    
+    // Reset cart
+    cart = [];
+    cartCount = 0;
+    updateCartUI();
+    cartModal.style.display = 'none';
+}
 
 // Notification system
 function showNotification(message) {
@@ -149,6 +229,44 @@ function showNotification(message) {
     }, 3000);
 }
 
+// Admin Login Modal
+const adminBtn = document.getElementById('adminBtn');
+const adminModal = document.getElementById('adminModal');
+const closeModal = document.querySelector('.close-modal');
+
+adminBtn.addEventListener('click', () => {
+    adminModal.style.display = 'flex';
+});
+
+closeModal.addEventListener('click', () => {
+    adminModal.style.display = 'none';
+});
+
+window.addEventListener('click', (e) => {
+    if (e.target === adminModal) {
+        adminModal.style.display = 'none';
+    }
+    if (e.target === cartModal) {
+        cartModal.style.display = 'none';
+    }
+});
+
+// Admin Login Form
+const adminLoginForm = document.getElementById('adminLoginForm');
+adminLoginForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const username = document.getElementById('adminUsername').value;
+    const password = document.getElementById('adminPassword').value;
+    
+    // Simulasi login admin
+    if (username === 'admin' && password === 'admin123') {
+        alert('Login berhasil! Dashboard admin Niken\'s Cake Store akan segera tersedia.');
+        adminModal.style.display = 'none';
+    } else {
+        alert('Username atau password salah!');
+    }
+});
+
 // Contact Form
 const contactForm = document.getElementById('contactForm');
 contactForm.addEventListener('submit', (e) => {
@@ -157,7 +275,7 @@ contactForm.addEventListener('submit', (e) => {
     const email = document.getElementById('email').value;
     const message = document.getElementById('message').value;
     
-    // Simpan data form (dalam implementasi nyata, kirim ke server)
+    // Simpan data form
     const formData = {
         name: name,
         email: email,
@@ -211,7 +329,7 @@ console.log(`
 ║        Website E-commerce            ║
 ║                                      ║
 ║     Developed by: Ricco              ║
-║     Version: 1.0                     ║
+║     Version: 2.0 (with Cart)         ║
 ║     Year: 2023                       ║
 ╚══════════════════════════════════════╝
 `);
