@@ -7,8 +7,6 @@
     <meta name="description" content="Niken's Cake Store - Toko kue premium dengan rasa terbaik. Kue ulang tahun, pernikahan, custom order. Free delivery Jakarta. Developed by Ricco">
     <meta name="keywords" content="kue, cake, toko kue, kue ulang tahun, kue pernikahan, kue custom, Niken's Cake Store">
     <meta name="author" content="Ricco">
-    
-    <!-- Google Verification -->
     <meta name="google-site-verification" content="google723d0321f3ef97dc.html" />
     
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -51,8 +49,8 @@
     <section class="products" id="products">
         <div class="container">
             <h2 class="section-title">Produk Kami</h2>
-            <div class="products-grid">
-                <!-- Product cards akan diisi oleh JavaScript -->
+            <div class="products-grid" id="productsGrid">
+                <!-- Products loaded from localStorage -->
             </div>
         </div>
     </section>
@@ -81,17 +79,24 @@
             <div class="contact-container">
                 <div class="contact-info">
                     <h3>Informasi Kontak</h3>
-                    <p><i class="fas fa-map-marker-alt"></i> Jl. Merdeka No. 123, Jakarta</p>
-                    <p><i class="fas fa-phone"></i> +62 21 1234 5678</p>
-                    <p><i class="fas fa-envelope"></i> info@nikencakes.com</p>
+                    <p><i class="fas fa-map-marker-alt"></i> Serang Banten, Jalan Perintis IV Griya Baladika Asri</p>
+                    <p><i class="fas fa-phone"></i> +62 856-9190-2750</p>
+                    <p><i class="fas fa-envelope"></i> riocco112@gmail.com</p>
                     <p><i class="fas fa-clock"></i> Buka Setiap Hari: 08.00 - 20.00 WIB</p>
                     
                     <div class="social-links">
-                        <a href="#"><i class="fab fa-facebook-f"></i></a>
-                        <a href="#"><i class="fab fa-instagram"></i></a>
-                        <a href="#"><i class="fab fa-twitter"></i></a>
-                        <a href="#"><i class="fab fa-whatsapp"></i></a>
+                        <a href="https://wa.me/6285691902750?text=Halo%20Niken's%20Cake%20Store,%20saya%20ingin%20tanya%20tentang%20kue..." target="_blank">
+                            <i class="fab fa-whatsapp"></i>
+                        </a>
+                        <a href="mailto:riocco112@gmail.com">
+                            <i class="fas fa-envelope"></i>
+                        </a>
                     </div>
+                    
+                    <a href="https://wa.me/6285691902750?text=Halo%20Niken's%20Cake%20Store,%20saya%20ingin%20tanya%20tentang%20kue..." 
+                       class="contact-whatsapp" target="_blank">
+                        <i class="fab fa-whatsapp"></i> Chat via WhatsApp
+                    </a>
                 </div>
                 <div class="contact-form">
                     <h3>Kirim Pesan</h3>
@@ -184,10 +189,31 @@
                 <div class="cart-total">
                     Total: <span id="cartTotal">Rp 0</span>
                 </div>
-                <button class="btn checkout-btn" onclick="checkout()">Checkout Sekarang</button>
+                <button class="btn checkout-btn" onclick="showPaymentOptions()">Checkout Sekarang</button>
             </div>
         </div>
     </div>
+
+    <!-- Payment Modal -->
+    <div class="modal" id="paymentModal">
+        <div class="modal-content payment-modal">
+            <div class="modal-header">
+                <h3>💳 Metode Pembayaran</h3>
+                <button class="close-modal close-payment-modal">&times;</button>
+            </div>
+            <div class="payment-content" id="paymentContent">
+                <!-- Payment options will be rendered here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- WhatsApp Float Button -->
+    <a href="https://wa.me/6285691902750?text=Halo%20Niken's%20Cake%20Store,%20saya%20ingin%20tanya%20tentang%20kue..." 
+       class="whatsapp-float" 
+       target="_blank"
+       title="Chat via WhatsApp">
+        <i class="fab fa-whatsapp"></i>
+    </a>
 
     <script src="script.js"></script>
 </body>
