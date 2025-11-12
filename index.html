@@ -11,10 +11,6 @@
     
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="style.css">
-    
-    <!-- Preload critical resources -->
-    <link rel="preload" href="style.css" as="style">
-    <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" as="style">
 </head>
 <body>
     <!-- Header -->
@@ -55,10 +51,6 @@
             <h2 class="section-title">Produk Kami</h2>
             <div class="products-grid" id="productsGrid">
                 <!-- Products loaded from localStorage -->
-                <div class="loading-products">
-                    <i class="fas fa-spinner fa-spin"></i>
-                    <p>Memuat produk...</p>
-                </div>
             </div>
         </div>
     </section>
@@ -68,9 +60,7 @@
         <div class="container">
             <div class="about-content">
                 <div class="about-img">
-                    <img src="https://images.unsplash.com/photo-1558301214-0c68d1d07479?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1887&q=80" 
-                         alt="About Niken's Cake Store"
-                         loading="lazy">
+                    <img src="https://images.unsplash.com/photo-1558301214-0c68d1d07479?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1887&q=80" alt="About Niken's Cake Store">
                 </div>
                 <div class="about-text">
                     <h3>Tentang Niken's Cake Store</h3>
@@ -193,10 +183,7 @@
                 <button class="close-modal close-cart-modal">&times;</button>
             </div>
             <div class="cart-items" id="cartItems">
-                <div class="empty-cart">
-                    <i class="fas fa-shopping-cart"></i>
-                    <p>Keranjang belanja kosong</p>
-                </div>
+                <!-- Cart items will be rendered here -->
             </div>
             <div class="cart-footer">
                 <div class="cart-total">
@@ -224,44 +211,10 @@
     <a href="https://wa.me/6285691902750?text=Halo%20Niken's%20Cake%20Store,%20saya%20ingin%20tanya%20tentang%20kue..." 
        class="whatsapp-float" 
        target="_blank"
-       title="Chat via WhatsApp"
-       aria-label="Chat via WhatsApp">
+       title="Chat via WhatsApp">
         <i class="fab fa-whatsapp"></i>
     </a>
 
-    <!-- Loading indicator -->
-    <div id="loadingIndicator" style="display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 9999; background: rgba(255,255,255,0.9); padding: 20px; border-radius: 10px; text-align: center;">
-        <i class="fas fa-spinner fa-spin fa-2x" style="color: var(--pink);"></i>
-        <p style="margin-top: 10px;">Memuat...</p>
-    </div>
-
     <script src="script.js"></script>
-    
-    <!-- Inline script untuk initial stability -->
-    <script>
-        // Prevent FOUC (Flash of Unstyled Content)
-        document.documentElement.style.visibility = 'hidden';
-        document.documentElement.style.opacity = '0';
-        
-        window.addEventListener('DOMContentLoaded', () => {
-            // Gradually show content after load
-            setTimeout(() => {
-                document.documentElement.style.visibility = 'visible';
-                document.documentElement.style.opacity = '1';
-                document.documentElement.style.transition = 'opacity 0.3s ease';
-            }, 100);
-        });
-
-        // Error handling untuk images
-        document.addEventListener('DOMContentLoaded', function() {
-            const images = document.querySelectorAll('img');
-            images.forEach(img => {
-                img.addEventListener('error', function() {
-                    this.src = 'https://via.placeholder.com/300x200/f0f0f0/666?text=Gambar+Tidak+Tersedia';
-                    this.alt = 'Gambar tidak tersedia';
-                });
-            });
-        });
-    </script>
 </body>
 </html>
