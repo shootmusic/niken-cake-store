@@ -720,3 +720,9 @@ footer {
         right: 20px;
     }
 }
+
+/* ✅ FIX: Anti-jitter CSS only - TAMBAHAN */
+.product-card, .cart-item, .modal-content, .product-row, .order-row {
+    transform: translateZ(0);
+    backface-visibility: hidden;
+}
