@@ -54,6 +54,30 @@ function initializeDefaultProducts() {
     }
 }
 
+// Initialize Admin Credentials - FIXED
+function initializeAdminCredentials() {
+    try {
+        const existingCredentials = localStorage.getItem('nikenAdmin');
+        if (!existingCredentials) {
+            const defaultCredentials = {
+                username: 'admin',
+                password: 'admin123'
+            };
+            localStorage.setItem('nikenAdmin', JSON.stringify(defaultCredentials));
+            console.log('✅ Default admin credentials created');
+        } else {
+            console.log('✅ Admin credentials loaded');
+        }
+    } catch (error) {
+        console.error('Error initializing credentials:', error);
+        // Force reset credentials
+        localStorage.setItem('nikenAdmin', JSON.stringify({
+            username: 'admin',
+            password: 'admin123'
+        }));
+    }
+}
+
 // Load products from localStorage
 function loadProducts() {
     const products = JSON.parse(localStorage.getItem('nikenProducts')) || [];
@@ -109,10 +133,12 @@ function addToCart(productId) {
 
 // Update Cart UI
 function updateCartUI() {
-    cartCountElement.textContent = cartCount;
+    if (cartCountElement) {
+        cartCountElement.textContent = cartCount;
+    }
     
     // Update cart modal if open
-    if (document.getElementById('cartModal').style.display === 'flex') {
+    if (document.getElementById('cartModal') && document.getElementById('cartModal').style.display === 'flex') {
         renderCartModal();
     }
 }
@@ -121,6 +147,8 @@ function updateCartUI() {
 function renderCartModal() {
     const cartItems = document.getElementById('cartItems');
     const cartTotal = document.getElementById('cartTotal');
+    
+    if (!cartItems || !cartTotal) return;
     
     if (cart.length === 0) {
         cartItems.innerHTML = '<p class="empty-cart">Keranjang belanja kosong</p>';
@@ -156,42 +184,48 @@ function renderCartModal() {
 }
 
 // Cart Modal System
-const cartModal = document.getElementById('cartModal');
-const closeCartModal = document.querySelector('.close-cart-modal');
+function initializeCartModal() {
+    const cartModal = document.getElementById('cartModal');
+    const closeCartModal = document.querySelector('.close-cart-modal');
 
-// Open Cart Modal
-document.querySelector('.cart-icon').addEventListener('click', (e) => {
-    e.preventDefault();
-    cartModal.style.display = 'flex';
-    renderCartModal();
-});
+    if (cartModal && closeCartModal) {
+        // Open Cart Modal
+        document.querySelector('.cart-icon').addEventListener('click', (e) => {
+            e.preventDefault();
+            cartModal.style.display = 'flex';
+            renderCartModal();
+        });
 
-// Close Cart Modal
-closeCartModal.addEventListener('click', () => {
-    cartModal.style.display = 'none';
-});
+        // Close Cart Modal
+        closeCartModal.addEventListener('click', () => {
+            cartModal.style.display = 'none';
+        });
+    }
+}
 
 // Cart Item Controls
-document.addEventListener('click', (e) => {
-    // Add to Cart
-    if (e.target.classList.contains('add-to-cart')) {
-        const productId = parseInt(e.target.dataset.id);
-        addToCart(productId);
-    }
-    
-    // Quantity Controls
-    if (e.target.classList.contains('quantity-btn')) {
-        const productId = parseInt(e.target.dataset.id);
-        const action = e.target.dataset.action;
-        updateQuantity(productId, action);
-    }
-    
-    // Remove Item
-    if (e.target.classList.contains('remove-btn')) {
-        const productId = parseInt(e.target.dataset.id);
-        removeFromCart(productId);
-    }
-});
+function initializeCartControls() {
+    document.addEventListener('click', (e) => {
+        // Add to Cart
+        if (e.target.classList.contains('add-to-cart')) {
+            const productId = parseInt(e.target.dataset.id);
+            addToCart(productId);
+        }
+        
+        // Quantity Controls
+        if (e.target.classList.contains('quantity-btn')) {
+            const productId = parseInt(e.target.dataset.id);
+            const action = e.target.dataset.action;
+            updateQuantity(productId, action);
+        }
+        
+        // Remove Item
+        if (e.target.classList.contains('remove-btn')) {
+            const productId = parseInt(e.target.dataset.id);
+            removeFromCart(productId);
+        }
+    });
+}
 
 // Update Quantity
 function updateQuantity(productId, action) {
@@ -230,6 +264,8 @@ function showPaymentOptions() {
     
     const paymentModal = document.getElementById('paymentModal');
     const paymentContent = document.getElementById('paymentContent');
+    
+    if (!paymentModal || !paymentContent) return;
     
     paymentContent.innerHTML = `
         <div class="order-summary">
@@ -275,7 +311,10 @@ function showPaymentOptions() {
         </div>
     `;
     
-    cartModal.style.display = 'none';
+    const cartModal = document.getElementById('cartModal');
+    if (cartModal) {
+        cartModal.style.display = 'none';
+    }
     paymentModal.style.display = 'flex';
 }
 
@@ -288,48 +327,52 @@ function selectPaymentMethod(method) {
     
     // Add selected class to clicked
     const selectedMethod = document.querySelector(`[onclick="selectPaymentMethod('${method}')"]`);
-    selectedMethod.classList.add('selected');
-    selectedMethod.querySelector('input').checked = true;
+    if (selectedMethod) {
+        selectedMethod.classList.add('selected');
+        selectedMethod.querySelector('input').checked = true;
+    }
     
     // Show instructions
     const instructions = document.getElementById('paymentInstructions');
     const instructionContent = document.getElementById('instructionContent');
     
-    instructions.style.display = 'block';
-    
-    const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-    
-    switch(method) {
-        case 'bank':
-            instructionContent.innerHTML = `
-                <p><strong>Transfer ke Rekening Bank:</strong></p>
-                <p>BCA: 123-456-7890<br>a.n. Niken's Cake Store</p>
-                <p>BNI: 987-654-3210<br>a.n. Niken's Cake Store</p>
-                <p><strong>Total: Rp ${total.toLocaleString('id-ID')}</strong></p>
-                <p>Setelah transfer, konfirmasi melalui WhatsApp: <strong>${STORE_INFO.whatsapp}</strong></p>
-            `;
-            break;
-        case 'qris':
-            instructionContent.innerHTML = `
-                <p><strong>Scan QR Code berikut:</strong></p>
-                <p style="text-align: center; background: #f0f0f0; padding: 20px; border-radius: 10px;">
-                    [QR CODE WILL APPEAR HERE]<br>
-                    <small>Gunakan aplikasi bank/e-wallet untuk scan</small>
-                </p>
-                <p><strong>Total: Rp ${total.toLocaleString('id-ID')}</strong></p>
-                <p>Konfirmasi via WhatsApp: <strong>${STORE_INFO.whatsapp}</strong></p>
-            `;
-            break;
-        case 'ewallet':
-            instructionContent.innerHTML = `
-                <p><strong>Transfer ke E-Wallet:</strong></p>
-                <p>Gopay: 0812-3456-7890<br>a.n. Niken Store</p>
-                <p>OVO: 0812-3456-7890<br>a.n. Niken Store</p>
-                <p>DANA: 0812-3456-7890<br>a.n. Niken Store</p>
-                <p><strong>Total: Rp ${total.toLocaleString('id-ID')}</strong></p>
-                <p>Konfirmasi via WhatsApp: <strong>${STORE_INFO.whatsapp}</strong></p>
-            `;
-            break;
+    if (instructions && instructionContent) {
+        instructions.style.display = 'block';
+        
+        const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+        
+        switch(method) {
+            case 'bank':
+                instructionContent.innerHTML = `
+                    <p><strong>Transfer ke Rekening Bank:</strong></p>
+                    <p>BCA: 123-456-7890<br>a.n. Niken's Cake Store</p>
+                    <p>BNI: 987-654-3210<br>a.n. Niken's Cake Store</p>
+                    <p><strong>Total: Rp ${total.toLocaleString('id-ID')}</strong></p>
+                    <p>Setelah transfer, konfirmasi melalui WhatsApp: <strong>${STORE_INFO.whatsapp}</strong></p>
+                `;
+                break;
+            case 'qris':
+                instructionContent.innerHTML = `
+                    <p><strong>Scan QR Code berikut:</strong></p>
+                    <p style="text-align: center; background: #f0f0f0; padding: 20px; border-radius: 10px;">
+                        [QR CODE WILL APPEAR HERE]<br>
+                        <small>Gunakan aplikasi bank/e-wallet untuk scan</small>
+                    </p>
+                    <p><strong>Total: Rp ${total.toLocaleString('id-ID')}</strong></p>
+                    <p>Konfirmasi via WhatsApp: <strong>${STORE_INFO.whatsapp}</strong></p>
+                `;
+                break;
+            case 'ewallet':
+                instructionContent.innerHTML = `
+                    <p><strong>Transfer ke E-Wallet:</strong></p>
+                    <p>Gopay: 0812-3456-7890<br>a.n. Niken Store</p>
+                    <p>OVO: 0812-3456-7890<br>a.n. Niken Store</p>
+                    <p>DANA: 0812-3456-7890<br>a.n. Niken Store</p>
+                    <p><strong>Total: Rp ${total.toLocaleString('id-ID')}</strong></p>
+                    <p>Konfirmasi via WhatsApp: <strong>${STORE_INFO.whatsapp}</strong></p>
+                `;
+                break;
+        }
     }
 }
 
@@ -373,7 +416,9 @@ function processOrder() {
 
     // Show success message
     const paymentModal = document.getElementById('paymentModal');
-    paymentModal.style.display = 'none';
+    if (paymentModal) {
+        paymentModal.style.display = 'none';
+    }
     
     showNotification(`✅ Order berhasil! No. Order: #${newOrder.id}. Admin akan menghubungi Anda.`);
     
@@ -433,97 +478,162 @@ function showNotification(message) {
 }
 
 // Admin Login System
-const adminBtn = document.getElementById('adminBtn');
-const adminModal = document.getElementById('adminModal');
-const closeModal = document.querySelector('.close-modal');
-const paymentModal = document.getElementById('paymentModal');
-const closePaymentModal = document.querySelector('.close-payment-modal');
+function initializeAdminLogin() {
+    const adminBtn = document.getElementById('adminBtn');
+    const adminModal = document.getElementById('adminModal');
+    const closeModal = document.querySelector('.close-modal');
+    const paymentModal = document.getElementById('paymentModal');
+    const closePaymentModal = document.querySelector('.close-payment-modal');
 
-adminBtn.addEventListener('click', () => {
-    adminModal.style.display = 'flex';
-});
+    if (adminBtn && adminModal) {
+        adminBtn.addEventListener('click', () => {
+            adminModal.style.display = 'flex';
+        });
 
-closeModal.addEventListener('click', () => {
-    adminModal.style.display = 'none';
-});
+        closeModal.addEventListener('click', () => {
+            adminModal.style.display = 'none';
+        });
 
-closePaymentModal.addEventListener('click', () => {
-    paymentModal.style.display = 'none';
-});
-
-window.addEventListener('click', (e) => {
-    if (e.target === adminModal) {
-        adminModal.style.display = 'none';
-    }
-    if (e.target === cartModal) {
-        cartModal.style.display = 'none';
-    }
-    if (e.target === paymentModal) {
-        paymentModal.style.display = 'none';
-    }
-});
-
-// Admin Login Form
-const adminLoginForm = document.getElementById('adminLoginForm');
-adminLoginForm.addEventListener('submit', (e) => {
-    e.preventDefault();
-    const username = document.getElementById('adminUsername').value;
-    const password = document.getElementById('adminPassword').value;
-    
-    const adminCredentials = JSON.parse(localStorage.getItem('nikenAdmin')) || { 
-        username: 'admin', 
-        password: 'admin123' 
-    };
-    
-    if (username === adminCredentials.username && password === adminCredentials.password) {
-        showNotification('✅ Login berhasil! Mengarahkan ke Admin Panel...');
-        adminModal.style.display = 'none';
-        // Redirect to admin panel
-        setTimeout(() => {
-            window.open('admin-panel.html', '_blank');
-        }, 1000);
-    } else {
-        showNotification('❌ Username atau password salah!');
-    }
-});
-
-// Contact Form
-const contactForm = document.getElementById('contactForm');
-contactForm.addEventListener('submit', (e) => {
-    e.preventDefault();
-    const name = document.getElementById('name').value;
-    const email = document.getElementById('email').value;
-    const message = document.getElementById('message').value;
-    
-    // Create email body
-    const emailBody = `Name: ${name}%0AEmail: ${email}%0AMessage: ${message}%0A%0A---%0ADari Website: ${STORE_INFO.name}`;
-    const mailtoLink = `mailto:${STORE_INFO.email}?subject=Contact from ${STORE_INFO.name}&body=${emailBody}`;
-    
-    // Open email client
-    window.location.href = mailtoLink;
-    
-    showNotification('✅ Membuka aplikasi email... Silakan kirim pesan Anda.');
-    contactForm.reset();
-});
-
-// Smooth scrolling for navigation links
-document.querySelectorAll('nav a[href^="#"]').forEach(anchor => {
-    anchor.addEventListener('click', function (e) {
-        e.preventDefault();
-        const target = document.querySelector(this.getAttribute('href'));
-        if (target) {
-            target.scrollIntoView({
-                behavior: 'smooth',
-                block: 'start'
+        // Admin Login Form - FIXED VERSION
+        const adminLoginForm = document.getElementById('adminLoginForm');
+        if (adminLoginForm) {
+            adminLoginForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                const username = document.getElementById('adminUsername').value;
+                const password = document.getElementById('adminPassword').value;
+                
+                console.log('🔐 Login attempt:', username);
+                
+                // Get admin credentials
+                let adminCredentials;
+                try {
+                    const stored = localStorage.getItem('nikenAdmin');
+                    console.log('📦 Stored credentials:', stored);
+                    
+                    if (stored) {
+                        adminCredentials = JSON.parse(stored);
+                    } else {
+                        // Create default if not exist
+                        adminCredentials = { username: 'admin', password: 'admin123' };
+                        localStorage.setItem('nikenAdmin', JSON.stringify(adminCredentials));
+                    }
+                } catch (error) {
+                    console.error('Error loading credentials:', error);
+                    adminCredentials = { username: 'admin', password: 'admin123' };
+                }
+                
+                console.log('🔑 Checking:', username, 'vs', adminCredentials.username);
+                
+                if (username === adminCredentials.username && password === adminCredentials.password) {
+                    showNotification('✅ Login berhasil! Mengarahkan ke Admin Panel...');
+                    adminModal.style.display = 'none';
+                    
+                    // Clear form
+                    document.getElementById('adminUsername').value = '';
+                    document.getElementById('adminPassword').value = '';
+                    
+                    // Redirect to admin panel
+                    setTimeout(() => {
+                        window.open('admin-panel.html', '_blank');
+                    }, 1000);
+                } else {
+                    showNotification('❌ Username atau password salah!');
+                }
             });
         }
+    }
+
+    if (closePaymentModal && paymentModal) {
+        closePaymentModal.addEventListener('click', () => {
+            paymentModal.style.display = 'none';
+        });
+    }
+
+    // Close modals when clicking outside
+    window.addEventListener('click', (e) => {
+        if (adminModal && e.target === adminModal) {
+            adminModal.style.display = 'none';
+        }
+        const cartModal = document.getElementById('cartModal');
+        if (cartModal && e.target === cartModal) {
+            cartModal.style.display = 'none';
+        }
+        if (paymentModal && e.target === paymentModal) {
+            paymentModal.style.display = 'none';
+        }
     });
-});
+}
+
+// Contact Form
+function initializeContactForm() {
+    const contactForm = document.getElementById('contactForm');
+    if (contactForm) {
+        contactForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const name = document.getElementById('name').value;
+            const email = document.getElementById('email').value;
+            const message = document.getElementById('message').value;
+            
+            // Create email body
+            const emailBody = `Name: ${name}%0AEmail: ${email}%0AMessage: ${message}%0A%0A---%0ADari Website: ${STORE_INFO.name}`;
+            const mailtoLink = `mailto:${STORE_INFO.email}?subject=Contact from ${STORE_INFO.name}&body=${emailBody}`;
+            
+            // Open email client
+            window.location.href = mailtoLink;
+            
+            showNotification('✅ Membuka aplikasi email... Silakan kirim pesan Anda.');
+            contactForm.reset();
+        });
+    }
+}
+
+// Smooth scrolling for navigation links - FIXED
+function initializeSmoothScroll() {
+    document.querySelectorAll('nav a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener('click', function (e) {
+            e.preventDefault();
+            const targetId = this.getAttribute('href');
+            if (targetId && targetId !== '#') {
+                const target = document.querySelector(targetId);
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            }
+        });
+    });
+}
+
+// Emergency Reset Function
+function resetAdminSystem() {
+    localStorage.setItem('nikenAdmin', JSON.stringify({
+        username: 'admin',
+        password: 'admin123'
+    }));
+    console.log('🔄 Admin system reset to default');
+    alert('✅ System reset! Use: admin / admin123');
+}
 
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
+    console.log('🚀 Initializing Niken\'s Cake Store...');
+    
+    // Force reset credentials to ensure they work
+    localStorage.setItem('nikenAdmin', JSON.stringify({
+        username: 'admin',
+        password: 'admin123'
+    }));
+    
+    initializeAdminCredentials();
     initializeDefaultProducts();
     loadProducts();
+    initializeCartModal();
+    initializeCartControls();
+    initializeAdminLogin();
+    initializeContactForm();
+    initializeSmoothScroll();
     
     // Add CSS animation for notification
     const style = document.createElement('style');
@@ -543,6 +653,7 @@ document.addEventListener('DOMContentLoaded', () => {
     console.log('📞 Contact: ' + STORE_INFO.whatsapp);
     console.log('📧 Email: ' + STORE_INFO.email);
     console.log('👨‍💻 Developed by Ricco');
+    console.log('💡 For emergency reset, type: resetAdminSystem()');
 });
 
 // Developer credit in console
@@ -561,7 +672,7 @@ console.log(`
 ║     📱 Responsive Design             ║
 ║                                      ║
 ║     Developed by: Ricco              ║
-║     Version: 4.0 (Final)             ║
+║     Version: 4.2 (Fixed Login)       ║
 ║     Year: 2023                       ║
 ╚══════════════════════════════════════╝
 `);
