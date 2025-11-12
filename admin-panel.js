@@ -300,29 +300,64 @@ function loadSettings() {
     document.getElementById('currentAdmin').textContent = adminCredentials.username;
 }
 
+// FIXED Admin Credentials Update
 function updateAdminCredentials() {
     const newUsername = document.getElementById('newUsername').value.trim();
     const newPassword = document.getElementById('newPassword').value.trim();
 
-    if (newUsername) {
-        adminCredentials.username = newUsername;
-    }
-    if (newPassword) {
-        adminCredentials.password = newPassword;
-    }
+    console.log('🔄 Updating credentials...', { newUsername, newPassword });
 
     if (!newUsername && !newPassword) {
-        alert('Please enter either new username or password!');
+        alert('❌ Please enter either new username or password!');
         return;
     }
 
-    localStorage.setItem('nikenAdmin', JSON.stringify(adminCredentials));
-    
-    document.getElementById('newUsername').value = '';
-    document.getElementById('newPassword').value = '';
-    loadSettings();
-    
-    alert('✅ Admin credentials updated successfully!');
+    // Get current credentials
+    let currentCredentials;
+    try {
+        const stored = localStorage.getItem('nikenAdmin');
+        console.log('📦 Stored credentials:', stored);
+        
+        if (stored) {
+            currentCredentials = JSON.parse(stored);
+        } else {
+            // Create default if not exist
+            currentCredentials = { username: 'admin', password: 'admin123' };
+            localStorage.setItem('nikenAdmin', JSON.stringify(currentCredentials));
+        }
+    } catch (error) {
+        console.error('Error loading credentials:', error);
+        currentCredentials = { username: 'admin', password: 'admin123' };
+    }
+
+    // Update only provided fields
+    if (newUsername) {
+        currentCredentials.username = newUsername;
+    }
+    if (newPassword) {
+        currentCredentials.password = newPassword;
+    }
+
+    // Save back to localStorage
+    try {
+        localStorage.setItem('nikenAdmin', JSON.stringify(currentCredentials));
+        console.log('✅ Credentials updated:', currentCredentials);
+        
+        // Update global variable
+        adminCredentials = currentCredentials;
+        
+        // Clear form
+        document.getElementById('newUsername').value = '';
+        document.getElementById('newPassword').value = '';
+        
+        // Update display
+        document.getElementById('currentAdmin').textContent = currentCredentials.username;
+        
+        alert('✅ Admin credentials updated successfully!\n\nNew login:\nUsername: ' + currentCredentials.username + '\nPassword: ' + '•'.repeat(currentCredentials.password.length));
+    } catch (error) {
+        console.error('Error saving credentials:', error);
+        alert('❌ Error saving credentials! Check console for details.');
+    }
 }
 
 // Data Management
@@ -379,6 +414,18 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log('👨‍💼 Admin Panel Loaded - Niken\'s Cake Store');
     console.log('📞 Contact: ' + STORE_INFO.whatsapp);
     console.log('📧 Email: ' + STORE_INFO.email);
+    
+    // Ensure credentials are loaded properly
+    try {
+        const storedCreds = localStorage.getItem('nikenAdmin');
+        if (storedCreds) {
+            adminCredentials = JSON.parse(storedCreds);
+            console.log('✅ Loaded admin credentials:', adminCredentials);
+        }
+    } catch (error) {
+        console.error('Error loading credentials:', error);
+    }
+    
     loadDashboardStats();
     loadProducts();
     loadOrders();
