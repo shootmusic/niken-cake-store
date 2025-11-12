@@ -1,6 +1,19 @@
-// Niken's Cake Store - Main Script (JITTER FIXED VERSION)
+// Niken's Cake Store - Main Script
 // Developed by Ricco
 // Contact: WhatsApp +62 856-9190-2750 | Email: riocco112@gmail.com
+
+// ✅ FIX: Anti-jitter function - TAMBAHAN SAJA
+function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+        const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+    };
+}
 
 // Data Management
 let cart = [];
@@ -14,19 +27,6 @@ const STORE_INFO = {
     address: 'Serang Banten, Jalan Perintis IV Griya Baladika Asri',
     name: 'Niken\'s Cake Store'
 };
-
-// ✅ FIX: Debounce function untuk prevent jitter
-function debounce(func, wait) {
-    let timeout;
-    return function executedFunction(...args) {
-        const later = () => {
-            clearTimeout(timeout);
-            func(...args);
-        };
-        clearTimeout(timeout);
-        timeout = setTimeout(later, wait);
-    };
-}
 
 // Initialize default products if none exist
 function initializeDefaultProducts() {
@@ -91,33 +91,22 @@ function initializeAdminCredentials() {
     }
 }
 
-// ✅ FIX: Load products dengan optimasi performance
+// Load products from localStorage
 function loadProducts() {
     const products = JSON.parse(localStorage.getItem('nikenProducts')) || [];
     const productsGrid = document.getElementById('productsGrid');
-    
-    // ✅ FIX: Clear content dengan cara yang lebih smooth
-    while (productsGrid.firstChild) {
-        productsGrid.removeChild(productsGrid.firstChild);
-    }
+    productsGrid.innerHTML = '';
 
     if (products.length === 0) {
-        const emptyElement = document.createElement('p');
-        emptyElement.className = 'empty-cart';
-        emptyElement.textContent = 'Belum ada produk tersedia';
-        productsGrid.appendChild(emptyElement);
+        productsGrid.innerHTML = '<p class="empty-cart">Belum ada produk tersedia</p>';
         return;
     }
-
-    // ✅ FIX: Gunakan document fragment untuk prevent multiple reflows
-    const fragment = document.createDocumentFragment();
 
     products.forEach(product => {
         const productCard = document.createElement('div');
         productCard.className = 'product-card';
         productCard.innerHTML = `
-            <img src="${product.image}" alt="${product.name}" class="product-img" 
-                 onerror="this.src='https://via.placeholder.com/300x200/f0f0f0/666?text=No+Image'">
+            <img src="${product.image}" alt="${product.name}" class="product-img">
             <div class="product-info">
                 <h3 class="product-title">${product.name}</h3>
                 <p class="product-description">${product.description}</p>
@@ -125,17 +114,11 @@ function loadProducts() {
                 <button class="add-to-cart" data-id="${product.id}">Tambah ke Keranjang</button>
             </div>
         `;
-        fragment.appendChild(productCard);
+        productsGrid.appendChild(productCard);
     });
-
-    // ✅ FIX: Single DOM update
-    productsGrid.appendChild(fragment);
 }
 
-// ✅ FIX: Debounced version untuk rapid calls
-const debouncedLoadProducts = debounce(loadProducts, 50);
-
-// Add to Cart Function - OPTIMIZED
+// Add to Cart Function
 function addToCart(productId) {
     const products = JSON.parse(localStorage.getItem('nikenProducts')) || [];
     const product = products.find(p => p.id === productId);
@@ -161,7 +144,7 @@ function addToCart(productId) {
     showNotification(`✅ ${product.name} ditambahkan ke keranjang!`);
 }
 
-// Update Cart UI - OPTIMIZED
+// Update Cart UI
 function updateCartUI() {
     if (cartCountElement) {
         cartCountElement.textContent = cartCount;
@@ -173,7 +156,7 @@ function updateCartUI() {
     }
 }
 
-// ✅ FIX: Render Cart Modal dengan optimasi
+// Render Cart Modal
 function renderCartModal() {
     const cartItems = document.getElementById('cartItems');
     const cartTotal = document.getElementById('cartTotal');
@@ -187,9 +170,7 @@ function renderCartModal() {
     }
     
     let total = 0;
-    
-    // ✅ FIX: Gunakan fragment untuk cart items
-    const fragment = document.createDocumentFragment();
+    cartItems.innerHTML = '';
     
     cart.forEach(item => {
         const itemTotal = item.price * item.quantity;
@@ -209,26 +190,23 @@ function renderCartModal() {
                 <button class="remove-btn" data-id="${item.id}">🗑️</button>
             </div>
         `;
-        fragment.appendChild(cartItem);
+        cartItems.appendChild(cartItem);
     });
     
-    // ✅ FIX: Clear dan update sekaligus
-    cartItems.innerHTML = '';
-    cartItems.appendChild(fragment);
     cartTotal.textContent = `Rp ${total.toLocaleString('id-ID')}`;
 }
 
-// Cart Modal System - OPTIMIZED
+// Cart Modal System
 function initializeCartModal() {
     const cartModal = document.getElementById('cartModal');
     const closeCartModal = document.querySelector('.close-cart-modal');
 
     if (cartModal && closeCartModal) {
-        // ✅ FIX: Gunakan debounced function
+        // Open Cart Modal
         document.querySelector('.cart-icon').addEventListener('click', (e) => {
             e.preventDefault();
             cartModal.style.display = 'flex';
-            setTimeout(() => renderCartModal(), 10); // Small delay untuk smoothness
+            renderCartModal();
         });
 
         // Close Cart Modal
@@ -238,7 +216,7 @@ function initializeCartModal() {
     }
 }
 
-// Cart Item Controls - OPTIMIZED
+// Cart Item Controls
 function initializeCartControls() {
     document.addEventListener('click', (e) => {
         // Add to Cart
@@ -262,7 +240,7 @@ function initializeCartControls() {
     });
 }
 
-// Update Quantity - OPTIMIZED
+// Update Quantity
 function updateQuantity(productId, action) {
     const item = cart.find(item => item.id === productId);
     
@@ -277,7 +255,7 @@ function updateQuantity(productId, action) {
     updateCartUI();
 }
 
-// Remove from Cart - OPTIMIZED
+// Remove from Cart
 function removeFromCart(productId) {
     const itemIndex = cart.findIndex(item => item.id === productId);
     if (itemIndex > -1) {
@@ -288,7 +266,7 @@ function removeFromCart(productId) {
     }
 }
 
-// REAL Manual Payment System untuk Niken's Cake Store
+// Payment System
 function showPaymentOptions() {
     if (cart.length === 0) {
         showNotification('Keranjang kosong! Tambah produk dulu ya.');
@@ -304,27 +282,17 @@ function showPaymentOptions() {
     
     paymentContent.innerHTML = `
         <div class="order-summary">
-            <h4>🛍️ Ringkasan Pesanan</h4>
-            <div class="order-items">
-                ${cart.map(item => `
-                    <div class="order-item">
-                        <span>${item.name} (${item.quantity}x)</span>
-                        <span>Rp ${(item.price * item.quantity).toLocaleString('id-ID')}</span>
-                    </div>
-                `).join('')}
-            </div>
-            <div class="order-total">
-                <strong>Total: Rp ${total.toLocaleString('id-ID')}</strong>
-            </div>
+            <h4>Ringkasan Pesanan</h4>
+            <p>Total: <strong>Rp ${total.toLocaleString('id-ID')}</strong></p>
         </div>
         
-        <h4>💳 Pilih Metode Pembayaran:</h4>
+        <h4>Pilih Metode Pembayaran:</h4>
         
         <div class="payment-method" onclick="selectPaymentMethod('bank')">
             <div class="payment-icon">🏦</div>
             <div class="payment-details">
                 <h5>Transfer Bank</h5>
-                <p>BCA, BRI, Mandiri</p>
+                <p>BCA, BNI, BRI, Mandiri</p>
             </div>
             <input type="radio" name="payment" id="bank">
         </div>
@@ -333,7 +301,7 @@ function showPaymentOptions() {
             <div class="payment-icon">📱</div>
             <div class="payment-details">
                 <h5>QRIS</h5>
-                <p>Scan QR Code - All Banks & E-Wallet</p>
+                <p>Scan QR Code</p>
             </div>
             <input type="radio" name="payment" id="qris">
         </div>
@@ -342,7 +310,7 @@ function showPaymentOptions() {
             <div class="payment-icon">💳</div>
             <div class="payment-details">
                 <h5>E-Wallet</h5>
-                <p>Gopay, OVO, Dana, LinkAja</p>
+                <p>Gopay, OVO, Dana</p>
             </div>
             <input type="radio" name="payment" id="ewallet">
         </div>
@@ -351,6 +319,7 @@ function showPaymentOptions() {
             <div class="payment-instructions">
                 <h4 id="instructionTitle">Instruksi Pembayaran</h4>
                 <div id="instructionContent"></div>
+                <button class="btn confirm-order-btn" onclick="processOrder()">Konfirmasi Order</button>
             </div>
         </div>
     `;
@@ -384,147 +353,50 @@ function selectPaymentMethod(method) {
         instructions.style.display = 'block';
         
         const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-        const orderId = 'NK' + Date.now().toString().slice(-6); // Generate simple order ID
         
         switch(method) {
             case 'bank':
                 instructionContent.innerHTML = `
-                    <div class="real-payment-instructions">
-                        <div class="payment-header">
-                            <h4>🏦 Transfer Bank</h4>
-                            <div class="order-id">Order ID: <strong>${orderId}</strong></div>
-                        </div>
-                        
-                        <div class="bank-accounts">
-                            <div class="account-card">
-                                <div class="bank-name">BCA</div>
-                                <div class="account-number">123 456 7890</div>
-                                <div class="account-holder">NIKEN'S CAKE STORE</div>
-                                <button class="copy-btn" onclick="copyToClipboard('1234567890')">
-                                    📋 Salin No. Rekening
-                                </button>
-                            </div>
-                            
-                            <div class="account-card">
-                                <div class="bank-name">BRI</div>
-                                <div class="account-number">555 012 3456</div>
-                                <div class="account-holder">NIKEN'S CAKE STORE</div>
-                                <button class="copy-btn" onclick="copyToClipboard('5550123456')">
-                                    📋 Salin No. Rekening
-                                </button>
-                            </div>
-                        </div>
-                        
-                        <div class="payment-amount">
-                            <div class="total-amount">
-                                💰 Total Transfer: <strong>Rp ${total.toLocaleString('id-ID')}</strong>
-                            </div>
-                            <small>Transfer tepat sesuai jumlah di atas</small>
-                        </div>
-                        
-                        <div class="payment-steps">
-                            <h5>📝 Cara Bayar:</h5>
-                            <ol>
-                                <li>Transfer <strong>Rp ${total.toLocaleString('id-ID')}</strong> ke rekening BCA/BRI di atas</li>
-                                <li><strong>Screenshot bukti transfer</strong></li>
-                                <li>Klik tombol "Konfirmasi via WhatsApp" di bawah</li>
-                                <li>Kirim screenshot bukti transfer di WhatsApp</li>
-                                <li>Kami proses order dalam 1-2 jam</li>
-                            </ol>
-                        </div>
-                        
-                        <button class="btn whatsapp-confirm-btn" onclick="confirmPayment('${orderId}', ${total}, 'bank')">
-                            📱 Konfirmasi Pembayaran via WhatsApp
-                        </button>
-                    </div>
+                    <p><strong>Transfer ke Rekening Bank:</strong></p>
+                    <p>BCA: 123-456-7890<br>a.n. Niken's Cake Store</p>
+                    <p>BNI: 987-654-3210<br>a.n. Niken's Cake Store</p>
+                    <p><strong>Total: Rp ${total.toLocaleString('id-ID')}</strong></p>
+                    <p>Setelah transfer, konfirmasi melalui WhatsApp: <strong>${STORE_INFO.whatsapp}</strong></p>
                 `;
                 break;
-                
             case 'qris':
                 instructionContent.innerHTML = `
-                    <div class="real-payment-instructions">
-                        <div class="payment-header">
-                            <h4>📱 QRIS Payment</h4>
-                            <div class="order-id">Order ID: <strong>${orderId}</strong></div>
-                        </div>
-                        
-                        <div class="payment-steps">
-                            <h5>💡 Cara Bayar dengan QRIS:</h5>
-                            <ol>
-                                <li>Klik tombol "Minta QRIS Code" di bawah</li>
-                                <li>Kami akan kirim QRIS code via WhatsApp</li>
-                                <li>Scan QR code dengan aplikasi bank/e-wallet Anda</li>
-                                <li>Bayar <strong>Rp ${total.toLocaleString('id-ID')}</strong></li>
-                                <li>Kirim screenshot bukti bayar</li>
-                                <li>Order diproses dalam 1-2 jam</li>
-                            </ol>
-                        </div>
-                        
-                        <button class="btn whatsapp-confirm-btn" onclick="confirmPayment('${orderId}', ${total}, 'qris')">
-                            📱 Minta QRIS Code via WhatsApp
-                        </button>
-                    </div>
+                    <p><strong>Scan QR Code berikut:</strong></p>
+                    <p style="text-align: center; background: #f0f0f0; padding: 20px; border-radius: 10px;">
+                        [QR CODE WILL APPEAR HERE]<br>
+                        <small>Gunakan aplikasi bank/e-wallet untuk scan</small>
+                    </p>
+                    <p><strong>Total: Rp ${total.toLocaleString('id-ID')}</strong></p>
+                    <p>Konfirmasi via WhatsApp: <strong>${STORE_INFO.whatsapp}</strong></p>
                 `;
                 break;
-                
             case 'ewallet':
                 instructionContent.innerHTML = `
-                    <div class="real-payment-instructions">
-                        <div class="payment-header">
-                            <h4>💳 E-Wallet</h4>
-                            <div class="order-id">Order ID: <strong>${orderId}</strong></div>
-                        </div>
-                        
-                        <div class="ewallet-accounts">
-                            <div class="account-card">
-                                <div class="bank-name">Gopay</div>
-                                <div class="account-number">0812 3456 7890</div>
-                                <div class="account-holder">Niken Store</div>
-                                <button class="copy-btn" onclick="copyToClipboard('081234567890')">
-                                    📋 Salin No. HP
-                                </button>
-                            </div>
-                            
-                            <div class="account-card">
-                                <div class="bank-name">DANA</div>
-                                <div class="account-number">0812 3456 7890</div>
-                                <div class="account-holder">Niken Store</div>
-                                <button class="copy-btn" onclick="copyToClipboard('081234567890')">
-                                    📋 Salin No. HP
-                                </button>
-                            </div>
-                        </div>
-                        
-                        <div class="payment-amount">
-                            <div class="total-amount">
-                                💰 Total Transfer: <strong>Rp ${total.toLocaleString('id-ID')}</strong>
-                            </div>
-                            <small>Transfer tepat sesuai jumlah di atas</small>
-                        </div>
-                        
-                        <div class="payment-steps">
-                            <h5>📝 Cara Bayar:</h5>
-                            <ol>
-                                <li>Transfer ke nomor Gopay/DANA di atas</li>
-                                <li><strong>Screenshot bukti transfer</strong></li>
-                                <li>Klik tombol "Konfirmasi via WhatsApp" di bawah</li>
-                                <li>Kirim screenshot bukti transfer</li>
-                                <li>Kami proses order dalam 1-2 jam</li>
-                            </ol>
-                        </div>
-                        
-                        <button class="btn whatsapp-confirm-btn" onclick="confirmPayment('${orderId}', ${total}, 'e-wallet')">
-                            📱 Konfirmasi Pembayaran via WhatsApp
-                        </button>
-                    </div>
+                    <p><strong>Transfer ke E-Wallet:</strong></p>
+                    <p>Gopay: 0812-3456-7890<br>a.n. Niken Store</p>
+                    <p>OVO: 0812-3456-7890<br>a.n. Niken Store</p>
+                    <p>DANA: 0812-3456-7890<br>a.n. Niken Store</p>
+                    <p><strong>Total: Rp ${total.toLocaleString('id-ID')}</strong></p>
+                    <p>Konfirmasi via WhatsApp: <strong>${STORE_INFO.whatsapp}</strong></p>
                 `;
                 break;
         }
     }
 }
 
-// WhatsApp Payment Confirmation Function
-function confirmPayment(orderId, total, method) {
+function processOrder() {
+    const selectedPayment = document.querySelector('input[name="payment"]:checked');
+    
+    if (!selectedPayment) {
+        showNotification('Pilih metode pembayaran terlebih dahulu!');
+        return;
+    }
+
     const customerName = prompt('Masukkan nama lengkap Anda:');
     const customerPhone = prompt('Masukkan nomor WhatsApp Anda:');
     const customerAddress = prompt('Masukkan alamat pengiriman:');
@@ -534,88 +406,57 @@ function confirmPayment(orderId, total, method) {
         return;
     }
 
-    // Save order data sementara
-    const orderData = {
-        orderId: orderId,
+    const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+    const paymentMethod = selectedPayment.id;
+
+    // Save order to localStorage
+    const newOrder = {
+        id: Date.now(),
         customerName: customerName,
         customerPhone: customerPhone,
         customerAddress: customerAddress,
-        items: JSON.parse(JSON.stringify(cart)),
+        items: JSON.parse(JSON.stringify(cart)), // Deep copy
         total: total,
-        paymentMethod: method,
+        paymentMethod: paymentMethod,
         status: 'Menunggu Pembayaran',
         timestamp: new Date().toISOString()
     };
 
-    // Simpan di localStorage
-    const pendingOrders = JSON.parse(localStorage.getItem('nikenPendingOrders')) || [];
-    pendingOrders.push(orderData);
-    localStorage.setItem('nikenPendingOrders', JSON.stringify(pendingOrders));
+    // Get existing orders and add new one
+    const existingOrders = JSON.parse(localStorage.getItem('nikenOrders')) || [];
+    existingOrders.push(newOrder);
+    localStorage.setItem('nikenOrders', JSON.stringify(existingOrders));
 
-    // Generate WhatsApp message
-    const itemsList = cart.map(item => 
-        `• ${item.name} (${item.quantity}x) = Rp ${(item.price * item.quantity).toLocaleString('id-ID')}`
-    ).join('%0A');
-
-    let paymentInfo = '';
-    if (method === 'bank') {
-        paymentInfo = 'Transfer Bank (BCA/BRI)';
-    } else if (method === 'qris') {
-        paymentInfo = 'QRIS Payment';
-    } else if (method === 'e-wallet') {
-        paymentInfo = 'E-Wallet (Gopay/DANA)';
-    }
-
-    const whatsappMessage = `Halo Niken's Cake Store!%0A%0A` +
-                           `Saya ingin konfirmasi pembayaran:%0A%0A` +
-                           `📋 *ORDER ID:* ${orderId}%0A` +
-                           `👤 *Nama:* ${customerName}%0A` +
-                           `📞 *WhatsApp:* ${customerPhone}%0A` +
-                           `🏠 *Alamat:* ${customerAddress}%0A%0A` +
-                           `🛒 *Detail Order:*%0A${itemsList}%0A%0A` +
-                           `💰 *Total:* Rp ${total.toLocaleString('id-ID')}%0A` +
-                           `💳 *Metode:* ${paymentInfo}%0A%0A` +
-                           `Saya sudah transfer dan akan kirim bukti screenshot di chat ini.`;
-
-    const whatsappUrl = `https://wa.me/6285691902750?text=${whatsappMessage}`;
-    
-    // Close modal dan buka WhatsApp
+    // Show success message
     const paymentModal = document.getElementById('paymentModal');
     if (paymentModal) {
         paymentModal.style.display = 'none';
     }
+    
+    showNotification(`✅ Order berhasil! No. Order: #${newOrder.id}. Admin akan menghubungi Anda.`);
     
     // Reset cart
     cart = [];
     cartCount = 0;
     updateCartUI();
     
-    // Show success message
-    showNotification(`✅ Order ${orderId} berhasil! Buka WhatsApp untuk konfirmasi pembayaran.`);
+    // Auto send WhatsApp message
+    const itemsList = cart.map(item => 
+        `- ${item.name} (${item.quantity}x) = Rp ${(item.price * item.quantity).toLocaleString('id-ID')}`
+    ).join('\n');
     
-    // Open WhatsApp setelah delay
+    const whatsappMessage = `Halo ${STORE_INFO.name}! Saya ${customerName} ingin order:\n\n${itemsList}\n\n💰 Total: Rp ${total.toLocaleString('id-ID')}\n💳 Metode: ${paymentMethod}\n📦 Alamat: ${customerAddress}\n📞 WhatsApp: ${customerPhone}\n\nSilakan konfirmasi ketersediaan dan biaya pengiriman. Terima kasih!`;
+    
+    const whatsappUrl = `https://wa.me/${STORE_INFO.whatsapp.replace('+', '')}?text=${encodeURIComponent(whatsappMessage)}`;
+    
     setTimeout(() => {
-        window.open(whatsappUrl, '_blank');
+        if (confirm('Buka WhatsApp untuk konfirmasi order?')) {
+            window.open(whatsappUrl, '_blank');
+        }
     }, 2000);
 }
 
-// Copy to Clipboard Function
-function copyToClipboard(text) {
-    navigator.clipboard.writeText(text).then(() => {
-        showNotification('✅ Nomor berhasil disalin!');
-    }).catch(() => {
-        // Fallback untuk browser lama
-        const textArea = document.createElement('textarea');
-        textArea.value = text;
-        document.body.appendChild(textArea);
-        textArea.select();
-        document.execCommand('copy');
-        document.body.removeChild(textArea);
-        showNotification('✅ Nomor berhasil disalin!');
-    });
-}
-
-// ✅ FIX: Notification system dengan optimasi
+// Notification system
 function showNotification(message) {
     // Remove existing notification
     const existingNotification = document.querySelector('.custom-notification');
@@ -637,24 +478,19 @@ function showNotification(message) {
         box-shadow: 0 4px 12px rgba(0,0,0,0.15);
         animation: slideIn 0.3s ease;
         max-width: 300px;
-        font-family: system-ui, -apple-system, sans-serif;
     `;
     notification.textContent = message;
     document.body.appendChild(notification);
     
     setTimeout(() => {
-        if (notification.parentNode) {
-            notification.style.animation = 'slideOut 0.3s ease';
-            setTimeout(() => {
-                if (notification.parentNode) {
-                    notification.remove();
-                }
-            }, 300);
-        }
+        notification.style.animation = 'slideOut 0.3s ease';
+        setTimeout(() => {
+            notification.remove();
+        }, 300);
     }, 3000);
 }
 
-// Admin Login System - OPTIMIZED
+// Admin Login System
 function initializeAdminLogin() {
     const adminBtn = document.getElementById('adminBtn');
     const adminModal = document.getElementById('adminModal');
@@ -663,17 +499,13 @@ function initializeAdminLogin() {
     const closePaymentModal = document.querySelector('.close-payment-modal');
 
     if (adminBtn && adminModal) {
-        // ✅ FIX: Gunakan proper event handling
-        adminBtn.addEventListener('click', (e) => {
-            e.preventDefault();
+        adminBtn.addEventListener('click', () => {
             adminModal.style.display = 'flex';
         });
 
-        if (closeModal) {
-            closeModal.addEventListener('click', () => {
-                adminModal.style.display = 'none';
-            });
-        }
+        closeModal.addEventListener('click', () => {
+            adminModal.style.display = 'none';
+        });
 
         // Admin Login Form - FIXED VERSION
         const adminLoginForm = document.getElementById('adminLoginForm');
@@ -730,7 +562,7 @@ function initializeAdminLogin() {
         });
     }
 
-    // Close modals when clicking outside - OPTIMIZED
+    // Close modals when clicking outside
     window.addEventListener('click', (e) => {
         if (adminModal && e.target === adminModal) {
             adminModal.style.display = 'none';
@@ -745,7 +577,7 @@ function initializeAdminLogin() {
     });
 }
 
-// Contact Form - OPTIMIZED
+// Contact Form
 function initializeContactForm() {
     const contactForm = document.getElementById('contactForm');
     if (contactForm) {
@@ -797,7 +629,7 @@ function resetAdminSystem() {
     alert('✅ System reset! Use: admin / admin123');
 }
 
-// ✅ FIX: Initialize dengan optimasi performance
+// Initialize
 document.addEventListener('DOMContentLoaded', () => {
     console.log('🚀 Initializing Niken\'s Cake Store...');
     
@@ -809,16 +641,26 @@ document.addEventListener('DOMContentLoaded', () => {
     
     initializeAdminCredentials();
     initializeDefaultProducts();
+    loadProducts();
+    initializeCartModal();
+    initializeCartControls();
+    initializeAdminLogin();
+    initializeContactForm();
+    initializeSmoothScroll();
     
-    // ✅ FIX: Load data dengan delay untuk prevent initial jitter
-    setTimeout(() => {
-        loadProducts();
-        initializeCartModal();
-        initializeCartControls();
-        initializeAdminLogin();
-        initializeContactForm();
-        initializeSmoothScroll();
-    }, 100);
+    // Add CSS animation for notification
+    const style = document.createElement('style');
+    style.textContent = `
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        @keyframes slideOut {
+            from { transform: translateX(0); opacity: 1; }
+            to { transform: translateX(100%); opacity: 0; }
+        }
+    `;
+    document.head.appendChild(style);
     
     console.log('🍰 Niken\'s Cake Store Website Loaded Successfully!');
     console.log('📞 Contact: ' + STORE_INFO.whatsapp);
@@ -843,7 +685,7 @@ console.log(`
 ║     📱 Responsive Design             ║
 ║                                      ║
 ║     Developed by: Ricco              ║
-║     Version: 4.3 (Jitter Fixed)      ║
+║     Version: 4.2 (Fixed Login)       ║
 ║     Year: 2023                       ║
 ╚══════════════════════════════════════╝
 `);
