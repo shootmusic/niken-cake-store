@@ -1,5 +1,16 @@
 User-agent: *
 Allow: /
+Allow: /#products
+Allow: /#about  
+Allow: /#contact
 Disallow: /admin-panel.html
+Disallow: /admin/
 
-Sitemap: https://yourdomain.com/sitemap.xml
+# Sitemap
+Sitemap: https://nikens-cake-store.com/sitemap.xml
+
+# Development info
+# Website: Niken's Cake Store
+# Developed by: Ricco
+# Contact: +62 856-9190-2750
+# Email: riocco112@gmail.com
