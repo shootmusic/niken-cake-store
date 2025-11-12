@@ -1,45 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
-        xmlns:xhtml="http://www.w3.org/1999/xhtml">
-  
-  <!-- ✅ FIX: Homepage dengan priority tertinggi -->
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://nikens-cake-store.com/</loc>
     <lastmod>2023-11-13</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
-  
-  <!-- ✅ FIX: Admin Panel untuk SEO -->
-  <url>
-    <loc>https://nikens-cake-store.com/admin-panel.html</loc>
-    <lastmod>2023-11-13</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.3</priority>
-  </url>
-  
-  <!-- ✅ FIX: Product categories pages -->
-  <url>
-    <loc>https://nikens-cake-store.com/#products</loc>
-    <lastmod>2023-11-13</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  
-  <!-- ✅ FIX: About page -->
-  <url>
-    <loc>https://nikens-cake-store.com/#about</loc>
-    <lastmod>2023-11-13</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  
-  <!-- ✅ FIX: Contact page -->
-  <url>
-    <loc>https://nikens-cake-store.com/#contact</loc>
-    <lastmod>2023-11-13</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-
 </urlset>
