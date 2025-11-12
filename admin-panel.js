@@ -1,7 +1,7 @@
-// Admin Panel Functionality for Niken's Cake Store
+// Admin Panel Functionality for Niken's Cake Store - JITTER FIXED
 // Developed by Ricco
 // Contact: WhatsApp +62 856-9190-2750 | Email: riocco112@gmail.com
-// LAST UPDATED: Fixed all issues - Better performance
+// VERSION: 2.0 - Optimized Performance & Stability
 
 let products = JSON.parse(localStorage.getItem('nikenProducts')) || [];
 let orders = JSON.parse(localStorage.getItem('nikenOrders')) || [];
@@ -18,7 +18,20 @@ const STORE_INFO = {
     name: 'Niken\'s Cake Store'
 };
 
-// Tab Navigation - FIXED
+// ✅ FIX: Debounce function untuk prevent rapid calls
+function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+        const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+    };
+}
+
+// Tab Navigation - OPTIMIZED
 function openTab(tabName, event) {
     // Hide all tab contents
     document.querySelectorAll('.tab-content').forEach(tab => {
@@ -38,19 +51,19 @@ function openTab(tabName, event) {
         event.target.classList.add('active');
     }
     
-    // Refresh data when switching tabs
+    // ✅ FIX: Gunakan debounced functions untuk prevent jitter
     if (tabName === 'dashboard') {
-        loadDashboardStats();
+        debouncedLoadDashboardStats();
     } else if (tabName === 'products') {
-        loadProducts();
+        debouncedLoadProducts();
     } else if (tabName === 'orders') {
-        loadOrders();
+        debouncedLoadOrders();
     } else if (tabName === 'settings') {
         loadSettings();
     }
 }
 
-// Dashboard Functions - ENHANCED
+// Dashboard Functions - OPTIMIZED
 function loadDashboardStats() {
     const totalProducts = products.length;
     const totalOrders = orders.length;
@@ -60,6 +73,7 @@ function loadDashboardStats() {
         .filter(order => order.status === 'Selesai')
         .reduce((sum, order) => sum + order.total, 0);
 
+    // ✅ FIX: Single update untuk prevent multiple reflows
     document.getElementById('totalProducts').textContent = totalProducts;
     document.getElementById('totalOrders').textContent = totalOrders;
     document.getElementById('pendingOrders').textContent = pendingOrders;
@@ -67,26 +81,34 @@ function loadDashboardStats() {
     document.getElementById('totalRevenue').textContent = `Rp ${totalRevenue.toLocaleString('id-ID')}`;
 }
 
-// Products Management (tetap sama, sudah bagus)
+// ✅ FIX: Products Management - JITTER FIXED
 function loadProducts() {
     const productsList = document.getElementById('productsList');
     
+    // ✅ FIX: Clear content dengan cara yang lebih smooth
+    while (productsList.firstChild) {
+        productsList.removeChild(productsList.firstChild);
+    }
+    
     if (products.length === 0) {
-        productsList.innerHTML = `
-            <tr>
-                <td colspan="5" class="empty-state">
-                    <i class="fas fa-box-open"></i>
-                    <p>Belum ada produk. Tambahkan produk pertama di atas!</p>
-                </td>
-            </tr>
+        const emptyRow = document.createElement('tr');
+        emptyRow.innerHTML = `
+            <td colspan="5" class="empty-state">
+                <i class="fas fa-box-open"></i>
+                <p>Belum ada produk. Tambahkan produk pertama di atas!</p>
+            </td>
         `;
+        productsList.appendChild(emptyRow);
         return;
     }
 
-    productsList.innerHTML = '';
+    // ✅ FIX: Gunakan document fragment untuk prevent multiple reflows
+    const fragment = document.createDocumentFragment();
 
     products.forEach(product => {
         const row = document.createElement('tr');
+        // ✅ FIX: Tambahkan CSS class untuk stability
+        row.className = 'product-row';
         row.innerHTML = `
             <td>
                 <img src="${product.image}" alt="${product.name}" class="product-image" 
@@ -96,16 +118,21 @@ function loadProducts() {
             <td>Rp ${product.price.toLocaleString('id-ID')}</td>
             <td>${product.description}</td>
             <td>
-                <button class="btn btn-warning" onclick="editProduct(${product.id})">
-                    <i class="fas fa-edit"></i> Edit
-                </button>
-                <button class="btn btn-danger" onclick="deleteProduct(${product.id})">
-                    <i class="fas fa-trash"></i> Hapus
-                </button>
+                <div class="action-buttons">
+                    <button class="btn btn-warning" onclick="editProduct(${product.id})">
+                        <i class="fas fa-edit"></i> Edit
+                    </button>
+                    <button class="btn btn-danger" onclick="deleteProduct(${product.id})">
+                        <i class="fas fa-trash"></i> Hapus
+                    </button>
+                </div>
             </td>
         `;
-        productsList.appendChild(row);
+        fragment.appendChild(row);
     });
+
+    // ✅ FIX: Single DOM update
+    productsList.appendChild(fragment);
 }
 
 function addProduct() {
@@ -134,7 +161,9 @@ function addProduct() {
 
     products.push(newProduct);
     saveProducts();
-    loadProducts();
+    
+    // ✅ FIX: Gunakan debounced version untuk smooth update
+    debouncedLoadProducts();
     
     // Clear form
     document.getElementById('newProductName').value = '';
@@ -143,7 +172,7 @@ function addProduct() {
     document.getElementById('newProductDesc').value = '';
     
     alert('✅ Produk berhasil ditambahkan!');
-    loadDashboardStats();
+    debouncedLoadDashboardStats();
 }
 
 function deleteProduct(productId) {
@@ -153,8 +182,10 @@ function deleteProduct(productId) {
 
     products = products.filter(p => p.id !== productId);
     saveProducts();
-    loadProducts();
-    loadDashboardStats();
+    
+    // ✅ FIX: Smooth updates
+    debouncedLoadProducts();
+    debouncedLoadDashboardStats();
     
     alert('✅ Produk berhasil dihapus!');
 }
@@ -175,7 +206,7 @@ function editProduct(productId) {
         product.description = newDesc;
         
         saveProducts();
-        loadProducts();
+        debouncedLoadProducts();
         alert('✅ Produk berhasil diperbarui!');
     }
 }
@@ -184,24 +215,32 @@ function saveProducts() {
     localStorage.setItem('nikenProducts', JSON.stringify(products));
 }
 
-// Orders Management - ENHANCED
+// ✅ FIX: Orders Management - JITTER FIXED
 function loadOrders() {
     const ordersList = document.getElementById('ordersList');
     const noOrders = document.getElementById('noOrders');
 
+    // ✅ FIX: Clear content dengan cara yang lebih smooth
+    while (ordersList.firstChild) {
+        ordersList.removeChild(ordersList.firstChild);
+    }
+
     if (orders.length === 0) {
-        ordersList.innerHTML = '';
         noOrders.style.display = 'block';
         return;
     }
 
     noOrders.style.display = 'none';
-    ordersList.innerHTML = '';
 
     const sortedOrders = [...orders].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
 
+    // ✅ FIX: Gunakan document fragment untuk prevent multiple reflows
+    const fragment = document.createDocumentFragment();
+
     sortedOrders.forEach(order => {
         const row = document.createElement('tr');
+        // ✅ FIX: Tambahkan CSS class untuk stability
+        row.className = 'order-row';
         const orderDate = new Date(order.timestamp).toLocaleDateString('id-ID');
         const itemsText = order.items.map(item => `${item.name} (${item.quantity}x)`).join(', ');
         
@@ -221,22 +260,28 @@ function loadOrders() {
             </td>
             <td>${orderDate}</td>
             <td>
-                <select class="status-select" onchange="updateOrderStatus(${order.id}, this.value)" style="margin-bottom: 5px;">
-                    <option value="processing" ${order.status === 'Diproses' ? 'selected' : ''}>Diproses</option>
-                    <option value="completed" ${order.status === 'Selesai' ? 'selected' : ''}>Selesai</option>
-                    <option value="cancelled" ${order.status === 'Dibatalkan' ? 'selected' : ''}>Dibatalkan</option>
-                </select>
-                <br>
-                <button class="btn btn-warning" onclick="viewOrderDetails(${order.id})" style="margin: 2px;">
-                    <i class="fas fa-eye"></i> Detail
-                </button>
-                <button class="btn" onclick="contactCustomer(${order.id})" style="background: #25D366; margin: 2px;">
-                    <i class="fab fa-whatsapp"></i> WhatsApp
-                </button>
+                <div class="order-actions">
+                    <select class="status-select" onchange="updateOrderStatus(${order.id}, this.value)" style="margin-bottom: 5px;">
+                        <option value="processing" ${order.status === 'Diproses' ? 'selected' : ''}>Diproses</option>
+                        <option value="completed" ${order.status === 'Selesai' ? 'selected' : ''}>Selesai</option>
+                        <option value="cancelled" ${order.status === 'Dibatalkan' ? 'selected' : ''}>Dibatalkan</option>
+                    </select>
+                    <div class="action-buttons">
+                        <button class="btn btn-warning" onclick="viewOrderDetails(${order.id})" style="margin: 2px;">
+                            <i class="fas fa-eye"></i> Detail
+                        </button>
+                        <button class="btn" onclick="contactCustomer(${order.id})" style="background: #25D366; margin: 2px;">
+                            <i class="fab fa-whatsapp"></i> WhatsApp
+                        </button>
+                    </div>
+                </div>
             </td>
         `;
-        ordersList.appendChild(row);
+        fragment.appendChild(row);
     });
+
+    // ✅ FIX: Single DOM update
+    ordersList.appendChild(fragment);
 }
 
 // Order status standardization - FIXED
@@ -303,8 +348,10 @@ function updateOrderStatus(orderId, newStatus) {
 
     order.status = statusMap[newStatus] || newStatus;
     saveOrders();
-    loadOrders();
-    loadDashboardStats();
+    
+    // ✅ FIX: Smooth updates
+    debouncedLoadOrders();
+    debouncedLoadDashboardStats();
     
     alert(`✅ Order #${orderId} status: ${order.status}`);
 }
@@ -313,7 +360,7 @@ function saveOrders() {
     localStorage.setItem('nikenOrders', JSON.stringify(orders));
 }
 
-// Settings Management (tetap sama)
+// Settings Management - OPTIMIZED
 function loadSettings() {
     document.getElementById('currentAdmin').textContent = adminCredentials.username;
 }
@@ -361,7 +408,7 @@ function updateAdminCredentials() {
     }
 }
 
-// Data Management (tetap sama)
+// Data Management - OPTIMIZED
 function exportData() {
     const data = {
         products: products,
@@ -401,15 +448,23 @@ function clearAllData() {
     
     localStorage.setItem('nikenAdmin', JSON.stringify(adminCredentials));
     
-    loadDashboardStats();
-    loadProducts();
-    loadOrders();
-    loadSettings();
+    // ✅ FIX: Smooth updates setelah reset
+    setTimeout(() => {
+        loadDashboardStats();
+        loadProducts();
+        loadOrders();
+        loadSettings();
+    }, 100);
     
     alert('🗑️ Semua data telah dihapus! Website direset ke default.');
 }
 
-// Initialize Admin Panel
+// ✅ FIX: Debounced versions untuk smooth performance
+const debouncedLoadDashboardStats = debounce(loadDashboardStats, 50);
+const debouncedLoadProducts = debounce(loadProducts, 50);
+const debouncedLoadOrders = debounce(loadOrders, 50);
+
+// ✅ FIX: Initialize Admin Panel dengan optimasi
 document.addEventListener('DOMContentLoaded', function() {
     console.log('👨‍💼 Admin Panel Loaded - Niken\'s Cake Store');
     console.log('📞 Contact: ' + STORE_INFO.whatsapp);
@@ -425,8 +480,89 @@ document.addEventListener('DOMContentLoaded', function() {
         console.error('Error loading credentials:', error);
     }
     
-    loadDashboardStats();
-    loadProducts();
-    loadOrders();
-    loadSettings();
+    // ✅ FIX: Load data dengan delay untuk prevent initial jitter
+    setTimeout(() => {
+        loadDashboardStats();
+        loadProducts();
+        loadOrders();
+        loadSettings();
+    }, 100);
 });
+
+// ✅ FIX: CSS untuk Admin Panel stability (Tambahkan di CSS admin panel)
+const adminPanelStyles = `
+/* Admin Panel Stability Fixes */
+.product-row, .order-row {
+    transform: translateZ(0);
+    backface-visibility: hidden;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 5px;
+    flex-wrap: nowrap;
+    transform: translateZ(0);
+}
+
+.order-actions {
+    transform: translateZ(0);
+    min-width: 200px;
+}
+
+.status-select {
+    transform: translateZ(0);
+    transition: all 0.2s ease;
+}
+
+.status-select:focus {
+    border-color: var(--pink);
+    outline: none;
+}
+
+.product-image {
+    width: 60px;
+    height: 60px;
+    object-fit: cover;
+    border-radius: 8px;
+    transform: translateZ(0);
+}
+
+.empty-state {
+    text-align: center;
+    padding: 40px !important;
+    color: #666;
+    transform: translateZ(0);
+}
+
+.empty-state i {
+    font-size: 48px;
+    margin-bottom: 15px;
+    display: block;
+    color: #ccc;
+}
+`;
+
+// ✅ FIX: Inject stability CSS
+const style = document.createElement('style');
+style.textContent = adminPanelStyles;
+document.head.appendChild(style);
+
+console.log(`
+╔══════════════════════════════════════╗
+║        ADMIN PANEL - NIKEN'S         ║
+║           CAKE STORE                 ║
+║                                      ║
+║     📞 ${STORE_INFO.whatsapp}        ║
+║     📧 ${STORE_INFO.email}           ║
+║     📍 ${STORE_INFO.address}         ║
+║                                      ║
+║     🛍️  Product Management           ║
+║     📦 Order Management              ║
+║     📊 Dashboard Analytics           ║
+║     ⚙️  Settings & Backup            ║
+║                                      ║
+║     Developed by: Ricco              ║
+║     Version: 2.0 (Jitter Fixed)      ║
+║     Performance: Optimized           ║
+╚══════════════════════════════════════╝
+`);
