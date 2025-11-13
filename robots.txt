@@ -2,4 +2,4 @@ User-agent: *
 Allow: /
 Disallow: /admin-panel.html
 
-Sitemap: https://nikens-cake-store.com/sitemap.xml
+Sitemap: https://yourdomain.com/sitemap.xml
