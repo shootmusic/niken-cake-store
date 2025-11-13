@@ -15,6 +15,11 @@ const STORE_INFO = {
     name: 'Niken\'s Cake Store'
 };
 
+// Server URL - SESUAIKAN DENGAN DOMAIN ANDA
+const SERVER_URL = window.location.hostname === 'localhost' 
+    ? 'http://localhost/server.php' 
+    : 'server.php';
+
 // Initialize default products if none exist
 function initializeDefaultProducts() {
     const defaultProducts = [
@@ -333,7 +338,7 @@ function selectPaymentMethod(method) {
     }
 }
 
-// FIXED FUNCTION: Process Order - ORDER AKAN MASUK KE ADMIN PANEL
+// FIXED: Process Order dengan Server Backup
 function processOrder() {
     const selectedPayment = document.querySelector('input[name="payment"]:checked');
     
@@ -354,20 +359,24 @@ function processOrder() {
     const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
     const paymentMethod = selectedPayment.id;
 
-    // FIX: Simpan order ke localStorage dengan KEY yang BENAR
+    // Data order
     const newOrder = {
         id: Date.now(),
         customerName: customerName,
         customerPhone: customerPhone,
         customerAddress: customerAddress,
-        items: JSON.parse(JSON.stringify(cart)), // Deep copy
+        items: JSON.parse(JSON.stringify(cart)),
         total: total,
         paymentMethod: paymentMethod,
         status: 'Menunggu Pembayaran',
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
+        source: 'website'
     };
 
-    // FIX: Gunakan KEY 'nikenOrders' yang sama dengan admin panel
+    // SIMPAN KE SERVER (UNTUK BEDA WiFi)
+    saveOrderToServer(newOrder);
+    
+    // JUGA SIMPAN KE LOCALSTORAGE (BACKUP)
     const existingOrders = JSON.parse(localStorage.getItem('nikenOrders')) || [];
     existingOrders.push(newOrder);
     localStorage.setItem('nikenOrders', JSON.stringify(existingOrders));
@@ -384,11 +393,35 @@ function processOrder() {
     updateCartUI();
     
     // Auto send WhatsApp message
-    const itemsList = newOrder.items.map(item => 
+    sendWhatsAppNotification(newOrder);
+}
+
+// FUNGSI BARU: Simpan ke Server
+function saveOrderToServer(orderData) {
+    fetch(SERVER_URL, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(orderData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log('✅ Order saved to server:', data);
+    })
+    .catch(error => {
+        console.error('❌ Error saving to server:', error);
+        // Fallback ke localStorage saja
+    });
+}
+
+// FUNGSI BARU: Kirim WhatsApp Notification
+function sendWhatsAppNotification(order) {
+    const itemsList = order.items.map(item => 
         `- ${item.name} (${item.quantity}x) = Rp ${(item.price * item.quantity).toLocaleString('id-ID')}`
     ).join('\n');
     
-    const whatsappMessage = `Halo ${STORE_INFO.name}! Saya ${customerName} ingin order:\n\n${itemsList}\n\n💰 Total: Rp ${total.toLocaleString('id-ID')}\n💳 Metode: ${paymentMethod}\n📦 Alamat: ${customerAddress}\n📞 WhatsApp: ${customerPhone}\n\nSilakan konfirmasi ketersediaan dan biaya pengiriman. Terima kasih!`;
+    const whatsappMessage = `📦 ORDER BARU #${order.id}\n\nPelanggan: ${order.customerName}\nTelepon: ${order.customerPhone}\nAlamat: ${order.customerAddress}\n\nItems:\n${itemsList}\n\n💰 Total: Rp ${order.total.toLocaleString('id-ID')}\n💳 Metode: ${order.paymentMethod}\n\n📍 Source: Website Niken's Cake Store`;
     
     const whatsappUrl = `https://wa.me/${STORE_INFO.whatsapp.replace('+', '')}?text=${encodeURIComponent(whatsappMessage)}`;
     
@@ -560,9 +593,10 @@ console.log(`
 ║     💳 Payment System                ║
 ║     👨‍💼 Admin Panel                 ║
 ║     📱 Responsive Design             ║
+║     🌐 Multi-WiFi Support            ║
 ║                                      ║
 ║     Developed by: Ricco              ║
-║     Version: 4.0 (Final)             ║
+║     Version: 5.0 (Multi-Device)      ║
 ║     Year: 2023                       ║
 ╚══════════════════════════════════════╝
 `);
