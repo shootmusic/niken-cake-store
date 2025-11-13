@@ -333,6 +333,7 @@ function selectPaymentMethod(method) {
     }
 }
 
+// FIXED FUNCTION: Process Order - ORDER AKAN MASUK KE ADMIN PANEL
 function processOrder() {
     const selectedPayment = document.querySelector('input[name="payment"]:checked');
     
@@ -353,7 +354,7 @@ function processOrder() {
     const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
     const paymentMethod = selectedPayment.id;
 
-    // Save order to localStorage
+    // FIX: Simpan order ke localStorage dengan KEY yang BENAR
     const newOrder = {
         id: Date.now(),
         customerName: customerName,
@@ -366,7 +367,7 @@ function processOrder() {
         timestamp: new Date().toISOString()
     };
 
-    // Get existing orders and add new one
+    // FIX: Gunakan KEY 'nikenOrders' yang sama dengan admin panel
     const existingOrders = JSON.parse(localStorage.getItem('nikenOrders')) || [];
     existingOrders.push(newOrder);
     localStorage.setItem('nikenOrders', JSON.stringify(existingOrders));
@@ -383,7 +384,7 @@ function processOrder() {
     updateCartUI();
     
     // Auto send WhatsApp message
-    const itemsList = cart.map(item => 
+    const itemsList = newOrder.items.map(item => 
         `- ${item.name} (${item.quantity}x) = Rp ${(item.price * item.quantity).toLocaleString('id-ID')}`
     ).join('\n');
     
