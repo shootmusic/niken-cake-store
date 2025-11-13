@@ -1,19 +1,6 @@
-// Admin Panel Functionality for Niken's Cake Store - FIXED
+// Admin Panel Functionality for Niken's Cake Store
 // Developed by Ricco
 // Contact: WhatsApp +62 856-9190-2750 | Email: riocco112@gmail.com
-
-// ✅ FIX: Anti-jitter function
-function debounce(func, wait) {
-    let timeout;
-    return function executedFunction(...args) {
-        const later = () => {
-            clearTimeout(timeout);
-            func(...args);
-        };
-        clearTimeout(timeout);
-        timeout = setTimeout(later, wait);
-    };
-}
 
 let products = JSON.parse(localStorage.getItem('nikenProducts')) || [];
 let orders = JSON.parse(localStorage.getItem('nikenOrders')) || [];
@@ -30,8 +17,8 @@ const STORE_INFO = {
     name: 'Niken\'s Cake Store'
 };
 
-// ✅ FIX: Tab Navigation - parameter event ditambah
-function openTab(tabName, event) {
+// Tab Navigation
+function openTab(tabName) {
     // Hide all tab contents
     document.querySelectorAll('.tab-content').forEach(tab => {
         tab.classList.remove('active');
@@ -45,10 +32,8 @@ function openTab(tabName, event) {
     // Show selected tab content
     document.getElementById(tabName).classList.add('active');
     
-    // ✅ FIX: Add active class to clicked tab
-    if (event && event.target) {
-        event.target.classList.add('active');
-    }
+    // Add active class to clicked tab
+    event.target.classList.add('active');
     
     // Refresh data when switching tabs
     if (tabName === 'dashboard') {
@@ -84,7 +69,7 @@ function loadProducts() {
             <tr>
                 <td colspan="5" class="empty-state">
                     <i class="fas fa-box-open"></i>
-                    <p>Belum ada produk. Tambahkan produk pertama di atas!</p>
+                    <p>No products yet. Add your first product above!</p>
                 </td>
             </tr>
         `;
@@ -108,7 +93,7 @@ function loadProducts() {
                     <i class="fas fa-edit"></i> Edit
                 </button>
                 <button class="btn btn-danger" onclick="deleteProduct(${product.id})">
-                    <i class="fas fa-trash"></i> Hapus
+                    <i class="fas fa-trash"></i> Delete
                 </button>
             </td>
         `;
@@ -123,12 +108,12 @@ function addProduct() {
     const description = document.getElementById('newProductDesc').value.trim();
 
     if (!name || !price || !image || !description) {
-        alert('Harap isi semua field!');
+        alert('Please fill all fields!');
         return;
     }
 
     if (price <= 0) {
-        alert('Harga harus lebih besar dari 0!');
+        alert('Price must be greater than 0!');
         return;
     }
 
@@ -150,12 +135,12 @@ function addProduct() {
     document.getElementById('newProductImage').value = '';
     document.getElementById('newProductDesc').value = '';
     
-    alert('✅ Produk berhasil ditambahkan!');
-    loadDashboardStats();
+    alert('✅ Product added successfully!');
+    loadDashboardStats(); // Update stats
 }
 
 function deleteProduct(productId) {
-    if (!confirm('Yakin ingin menghapus produk ini?')) {
+    if (!confirm('Are you sure you want to delete this product?')) {
         return;
     }
 
@@ -164,17 +149,17 @@ function deleteProduct(productId) {
     loadProducts();
     loadDashboardStats();
     
-    alert('✅ Produk berhasil dihapus!');
+    alert('✅ Product deleted successfully!');
 }
 
 function editProduct(productId) {
     const product = products.find(p => p.id === productId);
     if (!product) return;
 
-    const newName = prompt('Nama produk baru:', product.name);
-    const newPrice = prompt('Harga baru:', product.price);
-    const newImage = prompt('URL gambar baru:', product.image);
-    const newDesc = prompt('Deskripsi baru:', product.description);
+    const newName = prompt('Enter new product name:', product.name);
+    const newPrice = prompt('Enter new price:', product.price);
+    const newImage = prompt('Enter new image URL:', product.image);
+    const newDesc = prompt('Enter new description:', product.description);
 
     if (newName && newPrice && newImage && newDesc) {
         product.name = newName;
@@ -184,7 +169,7 @@ function editProduct(productId) {
         
         saveProducts();
         loadProducts();
-        alert('✅ Produk berhasil diperbarui!');
+        alert('✅ Product updated successfully!');
     }
 }
 
@@ -231,10 +216,10 @@ function loadOrders() {
             <td>${orderDate}</td>
             <td>
                 <button class="btn btn-success" onclick="updateOrderStatus(${order.id}, 'completed')">
-                    <i class="fas fa-check"></i> Selesai
+                    <i class="fas fa-check"></i> Complete
                 </button>
                 <button class="btn btn-warning" onclick="viewOrderDetails(${order.id})">
-                    <i class="fas fa-eye"></i> Lihat
+                    <i class="fas fa-eye"></i> View
                 </button>
                 <button class="btn" onclick="contactCustomer(${order.id})" style="background: #25D366;">
                     <i class="fab fa-whatsapp"></i> WhatsApp
@@ -245,13 +230,11 @@ function loadOrders() {
     });
 }
 
-// ✅ FIX: Order status standardization
 function getStatusClass(status) {
     const statusMap = {
         'Menunggu Pembayaran': 'pending',
-        'Diproses': 'processing', 
-        'Selesai': 'completed',
-        'Dibatalkan': 'cancelled'
+        'Paid': 'paid', 
+        'Completed': 'completed'
     };
     return statusMap[status] || 'pending';
 }
@@ -265,20 +248,20 @@ function viewOrderDetails(orderId) {
     ).join('\n');
 
     const message = `
-Detail Pesanan:
+Order Details:
 ──────────────
 Order ID: #${order.id}
 Customer: ${order.customerName}
-Telepon: ${order.customerPhone}
-Alamat: ${order.customerAddress}
-Pembayaran: ${order.paymentMethod}
+Phone: ${order.customerPhone}
+Address: ${order.customerAddress}
+Payment: ${order.paymentMethod}
 Status: ${order.status}
 Total: Rp ${order.total.toLocaleString('id-ID')}
 
 Items:
 ${itemsDetails}
 
-Tanggal Order: ${new Date(order.timestamp).toLocaleString('id-ID')}
+Order Date: ${new Date(order.timestamp).toLocaleString('id-ID')}
     `.trim();
 
     alert(message);
@@ -288,21 +271,16 @@ function contactCustomer(orderId) {
     const order = orders.find(o => o.id === orderId);
     if (!order) return;
 
-    const formattedPhone = order.customerPhone.replace(/\s+/g, '').replace('-', '').replace('+', '');
-    
-    const message = `Halo ${order.customerName}, saya dari ${STORE_INFO.name} mengenai order #${order.id}. Status saat ini: ${order.status}.`;
-    
-    const whatsappUrl = `https://wa.me/${formattedPhone}?text=${encodeURIComponent(message)}`;
+    const whatsappUrl = `https://wa.me/${order.customerPhone.replace('+', '').replace(/\D/g, '')}?text=Halo%20${encodeURIComponent(order.customerName)}%2C%20saya%20dari%20${encodeURIComponent(STORE_INFO.name)}%20mengenai%20order%20%23${order.id}`;
     window.open(whatsappUrl, '_blank');
 }
 
-// ✅ FIX: Update order status function
 function updateOrderStatus(orderId, newStatus) {
     const order = orders.find(o => o.id === orderId);
     if (!order) return;
 
     const statusMap = {
-        'completed': 'Selesai'
+        'completed': 'Completed'
     };
 
     order.status = statusMap[newStatus] || newStatus;
@@ -310,7 +288,7 @@ function updateOrderStatus(orderId, newStatus) {
     loadOrders();
     loadDashboardStats();
     
-    alert(`✅ Order #${orderId} status: ${order.status}`);
+    alert(`✅ Order #${orderId} marked as ${order.status}`);
 }
 
 function saveOrders() {
@@ -326,43 +304,25 @@ function updateAdminCredentials() {
     const newUsername = document.getElementById('newUsername').value.trim();
     const newPassword = document.getElementById('newPassword').value.trim();
 
+    if (newUsername) {
+        adminCredentials.username = newUsername;
+    }
+    if (newPassword) {
+        adminCredentials.password = newPassword;
+    }
+
     if (!newUsername && !newPassword) {
-        alert('❌ Harap masukkan username atau password baru!');
+        alert('Please enter either new username or password!');
         return;
     }
 
-    let currentCredentials;
-    try {
-        const stored = localStorage.getItem('nikenAdmin');
-        if (stored) {
-            currentCredentials = JSON.parse(stored);
-        } else {
-            currentCredentials = { username: 'admin', password: 'admin123' };
-            localStorage.setItem('nikenAdmin', JSON.stringify(currentCredentials));
-        }
-    } catch (error) {
-        console.error('Error loading credentials:', error);
-        currentCredentials = { username: 'admin', password: 'admin123' };
-    }
-
-    if (newUsername) {
-        currentCredentials.username = newUsername;
-    }
-    if (newPassword) {
-        currentCredentials.password = newPassword;
-    }
-
-    try {
-        localStorage.setItem('nikenAdmin', JSON.stringify(currentCredentials));
-        adminCredentials = currentCredentials;
-        document.getElementById('newUsername').value = '';
-        document.getElementById('newPassword').value = '';
-        document.getElementById('currentAdmin').textContent = currentCredentials.username;
-        alert('✅ Kredensial admin berhasil diperbarui!');
-    } catch (error) {
-        console.error('Error saving credentials:', error);
-        alert('❌ Error menyimpan kredensial!');
-    }
+    localStorage.setItem('nikenAdmin', JSON.stringify(adminCredentials));
+    
+    document.getElementById('newUsername').value = '';
+    document.getElementById('newPassword').value = '';
+    loadSettings();
+    
+    alert('✅ Admin credentials updated successfully!');
 }
 
 // Data Management
@@ -383,15 +343,15 @@ function exportData() {
     link.download = `niken-cake-store-backup-${new Date().toISOString().split('T')[0]}.json`;
     link.click();
     
-    alert('✅ Data berhasil diekspor!');
+    alert('✅ Data exported successfully!');
 }
 
 function clearAllData() {
-    if (!confirm('⚠️ BAHAYA! Ini akan menghapus SEMUA data termasuk produk dan pesanan. Yakin?')) {
+    if (!confirm('⚠️ DANGER! This will delete ALL data including products and orders. Are you absolutely sure?')) {
         return;
     }
 
-    if (!confirm('🚨 Tindakan ini tidak dapat dibatalkan! Ketik "DELETE ALL" untuk konfirmasi:')) {
+    if (!confirm('🚨 This action cannot be undone! Type "DELETE ALL" to confirm:')) {
         return;
     }
 
@@ -399,6 +359,7 @@ function clearAllData() {
     localStorage.removeItem('nikenOrders');
     localStorage.removeItem('nikenAdmin');
     
+    // Reset to defaults
     products = [];
     orders = [];
     adminCredentials = { username: 'admin', password: 'admin123' };
@@ -410,7 +371,7 @@ function clearAllData() {
     loadOrders();
     loadSettings();
     
-    alert('🗑️ Semua data telah dihapus! Website direset ke default.');
+    alert('🗑️ All data has been cleared! Website reset to default.');
 }
 
 // Initialize Admin Panel
@@ -418,17 +379,6 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log('👨‍💼 Admin Panel Loaded - Niken\'s Cake Store');
     console.log('📞 Contact: ' + STORE_INFO.whatsapp);
     console.log('📧 Email: ' + STORE_INFO.email);
-    
-    try {
-        const storedCreds = localStorage.getItem('nikenAdmin');
-        if (storedCreds) {
-            adminCredentials = JSON.parse(storedCreds);
-            console.log('✅ Loaded admin credentials:', adminCredentials);
-        }
-    } catch (error) {
-        console.error('Error loading credentials:', error);
-    }
-    
     loadDashboardStats();
     loadProducts();
     loadOrders();
