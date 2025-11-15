@@ -15,11 +15,6 @@ const STORE_INFO = {
     name: 'Niken\'s Cake Store'
 };
 
-// Server URL - SESUAIKAN DENGAN DOMAIN ANDA
-const SERVER_URL = window.location.hostname === 'localhost' 
-    ? 'http://localhost/server.php' 
-    : 'server.php';
-
 // Initialize default products if none exist
 function initializeDefaultProducts() {
     const defaultProducts = [
@@ -92,7 +87,7 @@ function addToCart(productId) {
     const product = products.find(p => p.id === productId);
     
     if (!product) {
-        showNotification('Produk tidak ditemukan!');
+        alert('Produk tidak ditemukan!');
         return;
     }
 
@@ -109,7 +104,7 @@ function addToCart(productId) {
     
     cartCount++;
     updateCartUI();
-    showNotification(`✅ ${product.name} ditambahkan ke keranjang!`);
+    alert(`✅ ${product.name} ditambahkan ke keranjang!`);
 }
 
 // Update Cart UI
@@ -220,14 +215,14 @@ function removeFromCart(productId) {
         cartCount -= cart[itemIndex].quantity;
         cart.splice(itemIndex, 1);
         updateCartUI();
-        showNotification('❌ Item dihapus dari keranjang');
+        alert('❌ Item dihapus dari keranjang');
     }
 }
 
 // Payment System
 function showPaymentOptions() {
     if (cart.length === 0) {
-        showNotification('Keranjang kosong! Tambah produk dulu ya.');
+        alert('Keranjang kosong! Tambah produk dulu ya.');
         return;
     }
 
@@ -338,12 +333,12 @@ function selectPaymentMethod(method) {
     }
 }
 
-// FIXED: Process Order dengan Real-time Sync
+// Process Order
 function processOrder() {
     const selectedPayment = document.querySelector('input[name="payment"]:checked');
     
     if (!selectedPayment) {
-        showNotification('Pilih metode pembayaran terlebih dahulu!');
+        alert('Pilih metode pembayaran terlebih dahulu!');
         return;
     }
 
@@ -352,7 +347,7 @@ function processOrder() {
     const customerAddress = prompt('Masukkan alamat pengiriman:');
     
     if (!customerName || !customerPhone || !customerAddress) {
-        showNotification('Order dibatalkan. Harap isi semua data!');
+        alert('Order dibatalkan. Harap isi semua data!');
         return;
     }
 
@@ -369,18 +364,19 @@ function processOrder() {
         total: total,
         paymentMethod: paymentMethod,
         status: 'Menunggu Pembayaran',
-        timestamp: new Date().toISOString(),
-        source: 'website'
+        timestamp: new Date().toISOString()
     };
 
-    // SIMPAN KE SEMUA BROWSER (MULTI-DEVICE FIX)
-    saveOrderMultiDevice(newOrder);
+    // Simpan ke localStorage
+    const existingOrders = JSON.parse(localStorage.getItem('nikenOrders')) || [];
+    existingOrders.push(newOrder);
+    localStorage.setItem('nikenOrders', JSON.stringify(existingOrders));
     
     // Show success message
     const paymentModal = document.getElementById('paymentModal');
     paymentModal.style.display = 'none';
     
-    showNotification(`✅ Order berhasil! No. Order: #${newOrder.id}. Admin akan menghubungi Anda.`);
+    alert(`✅ Order berhasil! No. Order: #${newOrder.id}. Admin akan menghubungi Anda.`);
     
     // Reset cart
     cart = [];
@@ -391,46 +387,7 @@ function processOrder() {
     sendWhatsAppNotification(newOrder);
 }
 
-// FUNGSI BARU: Simpan Order ke Semua Device - INSTANT VERSION
-function saveOrderMultiDevice(orderData) {
-    // 1. Simpan ke LocalStorage (backup)
-    const existingOrders = JSON.parse(localStorage.getItem('nikenOrders')) || [];
-    existingOrders.push(orderData);
-    localStorage.setItem('nikenOrders', JSON.stringify(existingOrders));
-    
-    // 2. Simpan ke Server (untuk beda WiFi/device)
-    saveOrderToServer(orderData);
-    
-    // 3. Simpan ke Session Storage (untuk real-time)
-    sessionStorage.setItem('lastOrder', JSON.stringify(orderData));
-    
-    // 4. Trigger storage event UNTUK REAL-TIME INSTANT SYNC
-    const event = new Event('storage');
-    window.dispatchEvent(event);
-    
-    console.log('💾 Order saved to all storage systems - INSTANT SYNC READY');
-}
-
-// FUNGSI BARU: Simpan ke Server
-function saveOrderToServer(orderData) {
-    fetch(SERVER_URL, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(orderData)
-    })
-    .then(response => response.json())
-    .then(data => {
-        console.log('✅ Order saved to server:', data);
-    })
-    .catch(error => {
-        console.error('❌ Error saving to server:', error);
-        // Fallback ke localStorage saja
-    });
-}
-
-// FUNGSI BARU: Kirim WhatsApp Notification
+// Kirim WhatsApp Notification
 function sendWhatsAppNotification(order) {
     const itemsList = order.items.map(item => 
         `- ${item.name} (${item.quantity}x) = Rp ${(item.price * item.quantity).toLocaleString('id-ID')}`
@@ -445,40 +402,6 @@ function sendWhatsAppNotification(order) {
             window.open(whatsappUrl, '_blank');
         }
     }, 2000);
-}
-
-// Notification system
-function showNotification(message) {
-    // Remove existing notification
-    const existingNotification = document.querySelector('.custom-notification');
-    if (existingNotification) {
-        existingNotification.remove();
-    }
-
-    const notification = document.createElement('div');
-    notification.className = 'custom-notification';
-    notification.style.cssText = `
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        background: var(--pink);
-        color: white;
-        padding: 15px 20px;
-        border-radius: 5px;
-        z-index: 10000;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-        animation: slideIn 0.3s ease;
-        max-width: 300px;
-    `;
-    notification.textContent = message;
-    document.body.appendChild(notification);
-    
-    setTimeout(() => {
-        notification.style.animation = 'slideOut 0.3s ease';
-        setTimeout(() => {
-            notification.remove();
-        }, 300);
-    }, 3000);
 }
 
 // Admin Login System
@@ -525,14 +448,14 @@ adminLoginForm.addEventListener('submit', (e) => {
     };
     
     if (username === adminCredentials.username && password === adminCredentials.password) {
-        showNotification('✅ Login berhasil! Mengarahkan ke Admin Panel...');
+        alert('✅ Login berhasil! Mengarahkan ke Admin Panel...');
         adminModal.style.display = 'none';
         // Redirect to admin panel
         setTimeout(() => {
             window.open('admin-panel.html', '_blank');
         }, 1000);
     } else {
-        showNotification('❌ Username atau password salah!');
+        alert('❌ Username atau password salah!');
     }
 });
 
@@ -551,7 +474,7 @@ contactForm.addEventListener('submit', (e) => {
     // Open email client
     window.location.href = mailtoLink;
     
-    showNotification('✅ Membuka aplikasi email... Silakan kirim pesan Anda.');
+    alert('✅ Membuka aplikasi email... Silakan kirim pesan Anda.');
     contactForm.reset();
 });
 
@@ -574,44 +497,8 @@ document.addEventListener('DOMContentLoaded', () => {
     initializeDefaultProducts();
     loadProducts();
     
-    // Add CSS animation for notification
-    const style = document.createElement('style');
-    style.textContent = `
-        @keyframes slideIn {
-            from { transform: translateX(100%); opacity: 0; }
-            to { transform: translateX(0); opacity: 1; }
-        }
-        @keyframes slideOut {
-            from { transform: translateX(0); opacity: 1; }
-            to { transform: translateX(100%); opacity: 0; }
-        }
-    `;
-    document.head.appendChild(style);
-    
     console.log('🍰 Niken\'s Cake Store Website Loaded Successfully!');
     console.log('📞 Contact: ' + STORE_INFO.whatsapp);
     console.log('📧 Email: ' + STORE_INFO.email);
     console.log('👨‍💻 Developed by Ricco');
 });
-
-// Developer credit in console
-console.log(`
-╔══════════════════════════════════════╗
-║         NIKEN'S CAKE STORE           ║
-║        Complete E-Commerce           ║
-║                                      ║
-║     📞 ${STORE_INFO.whatsapp}        ║
-║     📧 ${STORE_INFO.email}           ║
-║     📍 ${STORE_INFO.address}         ║
-║                                      ║
-║     🛒 Shopping Cart                 ║
-║     💳 Payment System                ║
-║     👨‍💼 Admin Panel                 ║
-║     📱 Responsive Design             ║
-║     🌐 Multi-WiFi Support            ║
-║     ⚡ INSTANT SYNC v2.0             ║
-║                                      ║
-║     Developed by: Ricco              ║
-║     Version: 6.0 (Instant Sync)      ║
-║     Year: 2023                       ║
-╚══════════════════════════════════════╝
