@@ -1,4 +1,4 @@
-// Admin Panel Functionality for Niken's Cake Store
+// Admin Panel Functionality for Niken's Cake Store - INSTANT VERSION
 // Developed by Ricco
 // Contact: WhatsApp +62 856-9190-2750 | Email: riocco112@gmail.com
 
@@ -17,54 +17,82 @@ const STORE_INFO = {
     name: 'Niken\'s Cake Store'
 };
 
-// AUTO SYNC SYSTEM - FITUR BARU
-let autoRefreshInterval;
+// INSTANT SYNC SYSTEM - TANPA DELAY
 let lastOrderCount = 0;
 
-function startAutoSync() {
+function startInstantSync() {
     // Simpan jumlah order terakhir
     lastOrderCount = orders.length;
     
-    // Refresh data setiap 5 detik (lebih cepat)
-    autoRefreshInterval = setInterval(() => {
-        const previousOrderCount = orders.length;
-        
-        loadDashboardStats();
-        loadOrders();
-        loadProducts();
-        
-        // Cek jika ada order baru
-        if (orders.length > previousOrderCount) {
-            playNewOrderSound();
-            showNotification('🎉 ORDER BARU DITERIMA!');
-        }
-        
-        console.log('🔄 Auto-sync completed - Orders:', orders.length);
-    }, 5000); // 5 detik
+    // REAL-TIME: Cek perubahan localStorage setiap 500ms (0.5 detik)
+    setInterval(() => {
+        checkForNewOrders();
+    }, 500);
     
     // Juga refresh saat tab menjadi aktif
     document.addEventListener('visibilitychange', function() {
         if (!document.hidden) {
-            loadDashboardStats();
-            loadOrders();
-            loadProducts();
+            checkForNewOrders();
+        }
+    });
+    
+    // Listen untuk storage events (perubahan dari tab lain)
+    window.addEventListener('storage', function(e) {
+        if (e.key === 'nikenOrders' || e.key === 'nikenBackup') {
+            checkForNewOrders();
         }
     });
 }
 
-// Sound Notification untuk Order Baru - FITUR BARU
+// FUNGSI BARU: Cek orders baru secara real-time
+function checkForNewOrders() {
+    const previousOrderCount = orders.length;
+    
+    // Load data terbaru
+    const localOrders = JSON.parse(localStorage.getItem('nikenOrders')) || [];
+    const backupData = JSON.parse(localStorage.getItem('nikenBackup'));
+    
+    if (backupData && backupData.orders) {
+        orders = backupData.orders;
+    } else {
+        orders = localOrders;
+    }
+    
+    // Jika ada order baru
+    if (orders.length > previousOrderCount) {
+        playNewOrderSound();
+        showNotification('🎉 ORDER BARU DITERIMA!');
+        loadDashboardStats();
+        loadOrders();
+        loadProducts();
+    }
+}
+
+// Sound Notification untuk Order Baru
 function playNewOrderSound() {
     try {
-        // Create simple beep sound
-        const beep = new Audio("data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgYZrTp559NEAxQl9rwuGIjBjiR1/LMeSwFJHfH8N2QQAoUWq/p5aFREAtOltjwumQlBziR1/LMeSsFJHbH8N2QQAoUWq/p5aFREAtOltjwumQlBziR1/LMeSsFJHbH8N2QQAoUWq/p5aFREAtOltjwumQlBziR1/LMeSsFJHbH8N2QQAoUWq/p5aFREAtOltjwumQlBziR1/LMeSsFJHbH8N2QQAoUWq/p5aFREAtOltjwumQlBziR1/LMeSsFJHbH8N2QQAoUWq/p5aFREAtOltjw");
-        beep.volume = 0.3;
-        beep.play().catch(e => console.log('Sound notification skipped'));
+        // Create instant beep sound
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+        
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+        
+        oscillator.frequency.value = 1000;
+        oscillator.type = 'sine';
+        
+        gainNode.gain.setValueAtTime(0.5, audioContext.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+        
+        oscillator.start(audioContext.currentTime);
+        oscillator.stop(audioContext.currentTime + 0.5);
     } catch (e) {
         console.log('Sound notification not supported');
     }
 }
 
-// Notification System - FITUR BARU
+// Notification System
 function showNotification(message) {
     // Remove existing notification
     const existingNotification = document.querySelector('.custom-notification');
@@ -87,6 +115,7 @@ function showNotification(message) {
         animation: slideIn 0.3s ease;
         max-width: 300px;
         font-weight: bold;
+        font-size: 14px;
     `;
     notification.textContent = message;
     document.body.appendChild(notification);
@@ -99,7 +128,7 @@ function showNotification(message) {
     }, 3000);
 }
 
-// Auto Backup System - FITUR BARU
+// Auto Backup System
 function autoBackup() {
     const backupData = {
         products: products,
@@ -109,10 +138,9 @@ function autoBackup() {
     };
     
     localStorage.setItem('nikenBackup', JSON.stringify(backupData));
-    console.log('💾 Auto-backup completed');
 }
 
-// Loading Management - FITUR BARU
+// Loading Management
 function showLoading() {
     const loadingIndicator = document.getElementById('loadingIndicator');
     if (loadingIndicator) {
@@ -261,7 +289,7 @@ function addProduct() {
     document.getElementById('newProductDesc').value = '';
     
     showNotification('✅ Product added successfully!');
-    loadDashboardStats(); // Update stats
+    loadDashboardStats();
 }
 
 function deleteProduct(productId) {
@@ -300,7 +328,7 @@ function editProduct(productId) {
 
 function saveProducts() {
     localStorage.setItem('nikenProducts', JSON.stringify(products));
-    autoBackup(); // Auto backup setelah save
+    autoBackup();
 }
 
 // Orders Management
@@ -434,7 +462,7 @@ function updateOrderStatus(orderId, newStatus) {
 
 function saveOrders() {
     localStorage.setItem('nikenOrders', JSON.stringify(orders));
-    autoBackup(); // Auto backup setelah save
+    autoBackup();
 }
 
 // Settings Management
@@ -517,9 +545,9 @@ function clearAllData() {
     showNotification('🗑️ All data has been cleared! Website reset to default.');
 }
 
-// Initialize Admin Panel dengan Auto Sync
+// Initialize Admin Panel dengan Instant Sync
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('👨‍💼 Admin Panel Loaded - Niken\'s Cake Store');
+    console.log('👨‍💼 Admin Panel Loaded - INSTANT SYNC VERSION');
     console.log('📞 Contact: ' + STORE_INFO.whatsapp);
     console.log('📧 Email: ' + STORE_INFO.email);
     
@@ -542,11 +570,11 @@ document.addEventListener('DOMContentLoaded', function() {
     loadOrders();
     loadSettings();
     
-    // START AUTO SYNC - FITUR BARU
-    startAutoSync();
+    // START INSTANT SYNC - REAL-TIME!
+    startInstantSync();
     
-    // Auto backup setiap 2 menit
-    setInterval(autoBackup, 120000);
+    // Auto backup setiap 1 menit
+    setInterval(autoBackup, 60000);
     
-    console.log('🔄 Auto-sync system activated!');
+    console.log('⚡ INSTANT SYNC ACTIVATED - Orders update in 0.5 seconds!');
 });
