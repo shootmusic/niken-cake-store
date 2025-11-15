@@ -1,4 +1,4 @@
-// Admin Panel Functionality for Niken's Cake Store
+// Admin Panel Functionality for Niken's Cake Store - MULTI-DEVICE FIX
 // Developed by Ricco
 // Contact: WhatsApp +62 856-9190-2750 | Email: riocco112@gmail.com
 
@@ -57,15 +57,46 @@ function initializeDefaultProducts() {
     }
 }
 
-// Auto Refresh System
+// Auto Refresh System dengan Google Sheets Sync
 let refreshInterval;
 
 function startAutoRefresh() {
-    // Refresh data setiap 3 detik
+    // Refresh data setiap 5 detik + sync dari Google Sheets
     refreshInterval = setInterval(() => {
         loadDashboardStats();
         loadOrders();
-    }, 3000);
+        syncFromGoogleSheets();
+    }, 5000);
+}
+
+// FUNGSI BARU: Sync dari Google Sheets
+function syncFromGoogleSheets() {
+    const scriptURL = 'https://script.google.com/macros/s/AKfycbwQdC25lTkhXgJvJfW3gR9JzQ7Y7Y5c5b5b5b5b5b5b5b5b5b5b/exec';
+    
+    fetch(scriptURL + '?action=getOrders')
+    .then(response => response.json())
+    .then(cloudOrders => {
+        if (cloudOrders && cloudOrders.length > 0) {
+            // Bandingkan dengan local orders
+            const localOrders = JSON.parse(localStorage.getItem('nikenOrders')) || [];
+            
+            cloudOrders.forEach(cloudOrder => {
+                const orderExists = localOrders.some(localOrder => localOrder.id === cloudOrder.id);
+                if (!orderExists) {
+                    localOrders.push(cloudOrder);
+                    console.log('✅ New order synced from cloud:', cloudOrder.id);
+                }
+            });
+            
+            localStorage.setItem('nikenOrders', JSON.stringify(localOrders));
+            orders = localOrders;
+            loadOrders();
+            loadDashboardStats();
+        }
+    })
+    .catch(error => {
+        console.log('❌ Cloud sync offline, using localStorage only');
+    });
 }
 
 // Tab Navigation
@@ -433,9 +464,27 @@ function clearAllData() {
     alert('🗑️ All data has been cleared! Website reset to default.');
 }
 
+// Manual Sync Button
+function addSyncButton() {
+    const syncBtn = `<button class="btn btn-warning" onclick="manualSync()" style="margin: 10px;">
+        <i class="fas fa-sync-alt"></i> Sync Orders Now
+    </button>`;
+    
+    // Tambah tombol di dashboard
+    const formSection = document.querySelector('.form-section');
+    if (formSection) {
+        formSection.insertAdjacentHTML('afterbegin', syncBtn);
+    }
+}
+
+function manualSync() {
+    syncFromGoogleSheets();
+    alert('🔄 Manual sync started!');
+}
+
 // Initialize Admin Panel
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('👨‍💼 Admin Panel Loaded - Niken\'s Cake Store');
+    console.log('👨‍💼 Admin Panel Loaded - MULTI-DEVICE VERSION');
     console.log('📞 Contact: ' + STORE_INFO.whatsapp);
     console.log('📧 Email: ' + STORE_INFO.email);
     
@@ -446,6 +495,9 @@ document.addEventListener('DOMContentLoaded', function() {
     loadProducts();
     loadOrders();
     loadSettings();
+    
+    // Add manual sync button
+    addSyncButton();
     
     // Start auto refresh
     startAutoRefresh();
