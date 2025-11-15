@@ -17,6 +17,116 @@ const STORE_INFO = {
     name: 'Niken\'s Cake Store'
 };
 
+// AUTO SYNC SYSTEM - FITUR BARU
+let autoRefreshInterval;
+let lastOrderCount = 0;
+
+function startAutoSync() {
+    // Simpan jumlah order terakhir
+    lastOrderCount = orders.length;
+    
+    // Refresh data setiap 5 detik (lebih cepat)
+    autoRefreshInterval = setInterval(() => {
+        const previousOrderCount = orders.length;
+        
+        loadDashboardStats();
+        loadOrders();
+        loadProducts();
+        
+        // Cek jika ada order baru
+        if (orders.length > previousOrderCount) {
+            playNewOrderSound();
+            showNotification('🎉 ORDER BARU DITERIMA!');
+        }
+        
+        console.log('🔄 Auto-sync completed - Orders:', orders.length);
+    }, 5000); // 5 detik
+    
+    // Juga refresh saat tab menjadi aktif
+    document.addEventListener('visibilitychange', function() {
+        if (!document.hidden) {
+            loadDashboardStats();
+            loadOrders();
+            loadProducts();
+        }
+    });
+}
+
+// Sound Notification untuk Order Baru - FITUR BARU
+function playNewOrderSound() {
+    try {
+        // Create simple beep sound
+        const beep = new Audio("data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgYZrTp559NEAxQl9rwuGIjBjiR1/LMeSwFJHfH8N2QQAoUWq/p5aFREAtOltjwumQlBziR1/LMeSsFJHbH8N2QQAoUWq/p5aFREAtOltjwumQlBziR1/LMeSsFJHbH8N2QQAoUWq/p5aFREAtOltjwumQlBziR1/LMeSsFJHbH8N2QQAoUWq/p5aFREAtOltjwumQlBziR1/LMeSsFJHbH8N2QQAoUWq/p5aFREAtOltjwumQlBziR1/LMeSsFJHbH8N2QQAoUWq/p5aFREAtOltjw");
+        beep.volume = 0.3;
+        beep.play().catch(e => console.log('Sound notification skipped'));
+    } catch (e) {
+        console.log('Sound notification not supported');
+    }
+}
+
+// Notification System - FITUR BARU
+function showNotification(message) {
+    // Remove existing notification
+    const existingNotification = document.querySelector('.custom-notification');
+    if (existingNotification) {
+        existingNotification.remove();
+    }
+
+    const notification = document.createElement('div');
+    notification.className = 'custom-notification';
+    notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: #e91e63;
+        color: white;
+        padding: 15px 20px;
+        border-radius: 5px;
+        z-index: 10000;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        animation: slideIn 0.3s ease;
+        max-width: 300px;
+        font-weight: bold;
+    `;
+    notification.textContent = message;
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        notification.style.animation = 'slideOut 0.3s ease';
+        setTimeout(() => {
+            notification.remove();
+        }, 300);
+    }, 3000);
+}
+
+// Auto Backup System - FITUR BARU
+function autoBackup() {
+    const backupData = {
+        products: products,
+        orders: orders,
+        admin: adminCredentials,
+        backupTime: new Date().toISOString()
+    };
+    
+    localStorage.setItem('nikenBackup', JSON.stringify(backupData));
+    console.log('💾 Auto-backup completed');
+}
+
+// Loading Management - FITUR BARU
+function showLoading() {
+    const loadingIndicator = document.getElementById('loadingIndicator');
+    if (loadingIndicator) {
+        loadingIndicator.style.display = 'block';
+    }
+}
+
+function hideLoading() {
+    const loadingIndicator = document.getElementById('loadingIndicator');
+    if (loadingIndicator) {
+        loadingIndicator.style.display = 'none';
+    }
+}
+
 // Tab Navigation
 function openTab(tabName) {
     // Hide all tab contents
@@ -62,7 +172,19 @@ function loadDashboardStats() {
 
 // Products Management
 function loadProducts() {
+    showLoading();
+    
     const productsList = document.getElementById('productsList');
+    
+    // Load from multiple sources for reliability
+    const localProducts = JSON.parse(localStorage.getItem('nikenProducts')) || [];
+    const backupData = JSON.parse(localStorage.getItem('nikenBackup'));
+    
+    if (backupData && backupData.products) {
+        products = backupData.products;
+    } else {
+        products = localProducts;
+    }
     
     if (products.length === 0) {
         productsList.innerHTML = `
@@ -73,6 +195,7 @@ function loadProducts() {
                 </td>
             </tr>
         `;
+        hideLoading();
         return;
     }
 
@@ -99,6 +222,8 @@ function loadProducts() {
         `;
         productsList.appendChild(row);
     });
+    
+    hideLoading();
 }
 
 function addProduct() {
@@ -108,12 +233,12 @@ function addProduct() {
     const description = document.getElementById('newProductDesc').value.trim();
 
     if (!name || !price || !image || !description) {
-        alert('Please fill all fields!');
+        showNotification('Please fill all fields!');
         return;
     }
 
     if (price <= 0) {
-        alert('Price must be greater than 0!');
+        showNotification('Price must be greater than 0!');
         return;
     }
 
@@ -135,7 +260,7 @@ function addProduct() {
     document.getElementById('newProductImage').value = '';
     document.getElementById('newProductDesc').value = '';
     
-    alert('✅ Product added successfully!');
+    showNotification('✅ Product added successfully!');
     loadDashboardStats(); // Update stats
 }
 
@@ -149,7 +274,7 @@ function deleteProduct(productId) {
     loadProducts();
     loadDashboardStats();
     
-    alert('✅ Product deleted successfully!');
+    showNotification('✅ Product deleted successfully!');
 }
 
 function editProduct(productId) {
@@ -169,22 +294,36 @@ function editProduct(productId) {
         
         saveProducts();
         loadProducts();
-        alert('✅ Product updated successfully!');
+        showNotification('✅ Product updated successfully!');
     }
 }
 
 function saveProducts() {
     localStorage.setItem('nikenProducts', JSON.stringify(products));
+    autoBackup(); // Auto backup setelah save
 }
 
 // Orders Management
 function loadOrders() {
+    showLoading();
+    
     const ordersList = document.getElementById('ordersList');
     const noOrders = document.getElementById('noOrders');
+
+    // Load from multiple sources for reliability
+    const localOrders = JSON.parse(localStorage.getItem('nikenOrders')) || [];
+    const backupData = JSON.parse(localStorage.getItem('nikenBackup'));
+    
+    if (backupData && backupData.orders) {
+        orders = backupData.orders;
+    } else {
+        orders = localOrders;
+    }
 
     if (orders.length === 0) {
         ordersList.innerHTML = '';
         noOrders.style.display = 'block';
+        hideLoading();
         return;
     }
 
@@ -228,6 +367,8 @@ function loadOrders() {
         `;
         ordersList.appendChild(row);
     });
+    
+    hideLoading();
 }
 
 function getStatusClass(status) {
@@ -288,11 +429,12 @@ function updateOrderStatus(orderId, newStatus) {
     loadOrders();
     loadDashboardStats();
     
-    alert(`✅ Order #${orderId} marked as ${order.status}`);
+    showNotification(`✅ Order #${orderId} marked as ${order.status}`);
 }
 
 function saveOrders() {
     localStorage.setItem('nikenOrders', JSON.stringify(orders));
+    autoBackup(); // Auto backup setelah save
 }
 
 // Settings Management
@@ -312,7 +454,7 @@ function updateAdminCredentials() {
     }
 
     if (!newUsername && !newPassword) {
-        alert('Please enter either new username or password!');
+        showNotification('Please enter either new username or password!');
         return;
     }
 
@@ -322,7 +464,7 @@ function updateAdminCredentials() {
     document.getElementById('newPassword').value = '';
     loadSettings();
     
-    alert('✅ Admin credentials updated successfully!');
+    showNotification('✅ Admin credentials updated successfully!');
 }
 
 // Data Management
@@ -343,7 +485,7 @@ function exportData() {
     link.download = `niken-cake-store-backup-${new Date().toISOString().split('T')[0]}.json`;
     link.click();
     
-    alert('✅ Data exported successfully!');
+    showNotification('✅ Data exported successfully!');
 }
 
 function clearAllData() {
@@ -358,6 +500,7 @@ function clearAllData() {
     localStorage.removeItem('nikenProducts');
     localStorage.removeItem('nikenOrders');
     localStorage.removeItem('nikenAdmin');
+    localStorage.removeItem('nikenBackup');
     
     // Reset to defaults
     products = [];
@@ -371,16 +514,39 @@ function clearAllData() {
     loadOrders();
     loadSettings();
     
-    alert('🗑️ All data has been cleared! Website reset to default.');
+    showNotification('🗑️ All data has been cleared! Website reset to default.');
 }
 
-// Initialize Admin Panel
+// Initialize Admin Panel dengan Auto Sync
 document.addEventListener('DOMContentLoaded', function() {
     console.log('👨‍💼 Admin Panel Loaded - Niken\'s Cake Store');
     console.log('📞 Contact: ' + STORE_INFO.whatsapp);
     console.log('📧 Email: ' + STORE_INFO.email);
+    
+    // Add CSS for notifications
+    const style = document.createElement('style');
+    style.textContent = `
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        @keyframes slideOut {
+            from { transform: translateX(0); opacity: 1; }
+            to { transform: translateX(100%); opacity: 0; }
+        }
+    `;
+    document.head.appendChild(style);
+    
     loadDashboardStats();
     loadProducts();
     loadOrders();
     loadSettings();
+    
+    // START AUTO SYNC - FITUR BARU
+    startAutoSync();
+    
+    // Auto backup setiap 2 menit
+    setInterval(autoBackup, 120000);
+    
+    console.log('🔄 Auto-sync system activated!');
 });
