@@ -1,4 +1,4 @@
-// Admin Panel Functionality for Niken's Cake Store - INSTANT VERSION
+// Admin Panel Functionality for Niken's Cake Store
 // Developed by Ricco
 // Contact: WhatsApp +62 856-9190-2750 | Email: riocco112@gmail.com
 
@@ -17,142 +17,55 @@ const STORE_INFO = {
     name: 'Niken\'s Cake Store'
 };
 
-// INSTANT SYNC SYSTEM - TANPA DELAY
-let lastOrderCount = 0;
+// Initialize default products if none exist
+function initializeDefaultProducts() {
+    const defaultProducts = [
+        {
+            id: 1,
+            name: "Red Velvet Cake",
+            price: 250000,
+            image: "https://images.unsplash.com/photo-1559620192-032c4bc4674e?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1929&q=80",
+            description: "Kue red velvet lembut dengan cream cheese frosting"
+        },
+        {
+            id: 2,
+            name: "Chocolate Delight",
+            price: 280000,
+            image: "https://images.unsplash.com/photo-1571115764595-644a1f56a55c?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1928&q=80",
+            description: "Kue cokelat premium dengan lapisan ganache"
+        },
+        {
+            id: 3,
+            name: "Strawberry Dream",
+            price: 230000,
+            image: "https://images.unsplash.com/photo-1563729784474-d77dbb933a9e?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1887&q=80",
+            description: "Kue strawberry segar dengan buttercream"
+        },
+        {
+            id: 4,
+            name: "Rainbow Cake",
+            price: 320000,
+            image: "https://images.unsplash.com/photo-1578985545062-69928b1d9587?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1089&q=80",
+            description: "Kue pelangi colorful dengan lapisan berwarna-warni"
+        }
+    ];
 
-function startInstantSync() {
-    // Simpan jumlah order terakhir
-    lastOrderCount = orders.length;
-    
-    // REAL-TIME: Cek perubahan localStorage setiap 500ms (0.5 detik)
-    setInterval(() => {
-        checkForNewOrders();
-    }, 500);
-    
-    // Juga refresh saat tab menjadi aktif
-    document.addEventListener('visibilitychange', function() {
-        if (!document.hidden) {
-            checkForNewOrders();
-        }
-    });
-    
-    // Listen untuk storage events (perubahan dari tab lain)
-    window.addEventListener('storage', function(e) {
-        if (e.key === 'nikenOrders' || e.key === 'nikenBackup') {
-            checkForNewOrders();
-        }
-    });
+    const existingProducts = JSON.parse(localStorage.getItem('nikenProducts'));
+    if (!existingProducts || existingProducts.length === 0) {
+        localStorage.setItem('nikenProducts', JSON.stringify(defaultProducts));
+        products = defaultProducts;
+    }
 }
 
-// FUNGSI BARU: Cek orders baru secara real-time
-function checkForNewOrders() {
-    const previousOrderCount = orders.length;
-    
-    // Load data terbaru
-    const localOrders = JSON.parse(localStorage.getItem('nikenOrders')) || [];
-    const backupData = JSON.parse(localStorage.getItem('nikenBackup'));
-    
-    if (backupData && backupData.orders) {
-        orders = backupData.orders;
-    } else {
-        orders = localOrders;
-    }
-    
-    // Jika ada order baru
-    if (orders.length > previousOrderCount) {
-        playNewOrderSound();
-        showNotification('🎉 ORDER BARU DITERIMA!');
+// Auto Refresh System
+let refreshInterval;
+
+function startAutoRefresh() {
+    // Refresh data setiap 3 detik
+    refreshInterval = setInterval(() => {
         loadDashboardStats();
         loadOrders();
-        loadProducts();
-    }
-}
-
-// Sound Notification untuk Order Baru
-function playNewOrderSound() {
-    try {
-        // Create instant beep sound
-        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-        const oscillator = audioContext.createOscillator();
-        const gainNode = audioContext.createGain();
-        
-        oscillator.connect(gainNode);
-        gainNode.connect(audioContext.destination);
-        
-        oscillator.frequency.value = 1000;
-        oscillator.type = 'sine';
-        
-        gainNode.gain.setValueAtTime(0.5, audioContext.currentTime);
-        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
-        
-        oscillator.start(audioContext.currentTime);
-        oscillator.stop(audioContext.currentTime + 0.5);
-    } catch (e) {
-        console.log('Sound notification not supported');
-    }
-}
-
-// Notification System
-function showNotification(message) {
-    // Remove existing notification
-    const existingNotification = document.querySelector('.custom-notification');
-    if (existingNotification) {
-        existingNotification.remove();
-    }
-
-    const notification = document.createElement('div');
-    notification.className = 'custom-notification';
-    notification.style.cssText = `
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        background: #e91e63;
-        color: white;
-        padding: 15px 20px;
-        border-radius: 5px;
-        z-index: 10000;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-        animation: slideIn 0.3s ease;
-        max-width: 300px;
-        font-weight: bold;
-        font-size: 14px;
-    `;
-    notification.textContent = message;
-    document.body.appendChild(notification);
-    
-    setTimeout(() => {
-        notification.style.animation = 'slideOut 0.3s ease';
-        setTimeout(() => {
-            notification.remove();
-        }, 300);
     }, 3000);
-}
-
-// Auto Backup System
-function autoBackup() {
-    const backupData = {
-        products: products,
-        orders: orders,
-        admin: adminCredentials,
-        backupTime: new Date().toISOString()
-    };
-    
-    localStorage.setItem('nikenBackup', JSON.stringify(backupData));
-}
-
-// Loading Management
-function showLoading() {
-    const loadingIndicator = document.getElementById('loadingIndicator');
-    if (loadingIndicator) {
-        loadingIndicator.style.display = 'block';
-    }
-}
-
-function hideLoading() {
-    const loadingIndicator = document.getElementById('loadingIndicator');
-    if (loadingIndicator) {
-        loadingIndicator.style.display = 'none';
-    }
 }
 
 // Tab Navigation
@@ -200,19 +113,11 @@ function loadDashboardStats() {
 
 // Products Management
 function loadProducts() {
-    showLoading();
-    
     const productsList = document.getElementById('productsList');
     
-    // Load from multiple sources for reliability
+    // Load products from localStorage
     const localProducts = JSON.parse(localStorage.getItem('nikenProducts')) || [];
-    const backupData = JSON.parse(localStorage.getItem('nikenBackup'));
-    
-    if (backupData && backupData.products) {
-        products = backupData.products;
-    } else {
-        products = localProducts;
-    }
+    products = localProducts;
     
     if (products.length === 0) {
         productsList.innerHTML = `
@@ -223,7 +128,6 @@ function loadProducts() {
                 </td>
             </tr>
         `;
-        hideLoading();
         return;
     }
 
@@ -250,8 +154,6 @@ function loadProducts() {
         `;
         productsList.appendChild(row);
     });
-    
-    hideLoading();
 }
 
 function addProduct() {
@@ -261,12 +163,12 @@ function addProduct() {
     const description = document.getElementById('newProductDesc').value.trim();
 
     if (!name || !price || !image || !description) {
-        showNotification('Please fill all fields!');
+        alert('Please fill all fields!');
         return;
     }
 
     if (price <= 0) {
-        showNotification('Price must be greater than 0!');
+        alert('Price must be greater than 0!');
         return;
     }
 
@@ -288,7 +190,7 @@ function addProduct() {
     document.getElementById('newProductImage').value = '';
     document.getElementById('newProductDesc').value = '';
     
-    showNotification('✅ Product added successfully!');
+    alert('✅ Product added successfully!');
     loadDashboardStats();
 }
 
@@ -302,7 +204,7 @@ function deleteProduct(productId) {
     loadProducts();
     loadDashboardStats();
     
-    showNotification('✅ Product deleted successfully!');
+    alert('✅ Product deleted successfully!');
 }
 
 function editProduct(productId) {
@@ -322,36 +224,26 @@ function editProduct(productId) {
         
         saveProducts();
         loadProducts();
-        showNotification('✅ Product updated successfully!');
+        alert('✅ Product updated successfully!');
     }
 }
 
 function saveProducts() {
     localStorage.setItem('nikenProducts', JSON.stringify(products));
-    autoBackup();
 }
 
 // Orders Management
 function loadOrders() {
-    showLoading();
-    
     const ordersList = document.getElementById('ordersList');
     const noOrders = document.getElementById('noOrders');
 
-    // Load from multiple sources for reliability
+    // Load orders from localStorage
     const localOrders = JSON.parse(localStorage.getItem('nikenOrders')) || [];
-    const backupData = JSON.parse(localStorage.getItem('nikenBackup'));
-    
-    if (backupData && backupData.orders) {
-        orders = backupData.orders;
-    } else {
-        orders = localOrders;
-    }
+    orders = localOrders;
 
     if (orders.length === 0) {
         ordersList.innerHTML = '';
         noOrders.style.display = 'block';
-        hideLoading();
         return;
     }
 
@@ -395,8 +287,6 @@ function loadOrders() {
         `;
         ordersList.appendChild(row);
     });
-    
-    hideLoading();
 }
 
 function getStatusClass(status) {
@@ -457,12 +347,11 @@ function updateOrderStatus(orderId, newStatus) {
     loadOrders();
     loadDashboardStats();
     
-    showNotification(`✅ Order #${orderId} marked as ${order.status}`);
+    alert(`✅ Order #${orderId} marked as ${order.status}`);
 }
 
 function saveOrders() {
     localStorage.setItem('nikenOrders', JSON.stringify(orders));
-    autoBackup();
 }
 
 // Settings Management
@@ -482,7 +371,7 @@ function updateAdminCredentials() {
     }
 
     if (!newUsername && !newPassword) {
-        showNotification('Please enter either new username or password!');
+        alert('Please enter either new username or password!');
         return;
     }
 
@@ -492,7 +381,7 @@ function updateAdminCredentials() {
     document.getElementById('newPassword').value = '';
     loadSettings();
     
-    showNotification('✅ Admin credentials updated successfully!');
+    alert('✅ Admin credentials updated successfully!');
 }
 
 // Data Management
@@ -513,7 +402,7 @@ function exportData() {
     link.download = `niken-cake-store-backup-${new Date().toISOString().split('T')[0]}.json`;
     link.click();
     
-    showNotification('✅ Data exported successfully!');
+    alert('✅ Data exported successfully!');
 }
 
 function clearAllData() {
@@ -528,7 +417,6 @@ function clearAllData() {
     localStorage.removeItem('nikenProducts');
     localStorage.removeItem('nikenOrders');
     localStorage.removeItem('nikenAdmin');
-    localStorage.removeItem('nikenBackup');
     
     // Reset to defaults
     products = [];
@@ -542,39 +430,23 @@ function clearAllData() {
     loadOrders();
     loadSettings();
     
-    showNotification('🗑️ All data has been cleared! Website reset to default.');
+    alert('🗑️ All data has been cleared! Website reset to default.');
 }
 
-// Initialize Admin Panel dengan Instant Sync
+// Initialize Admin Panel
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('👨‍💼 Admin Panel Loaded - INSTANT SYNC VERSION');
+    console.log('👨‍💼 Admin Panel Loaded - Niken\'s Cake Store');
     console.log('📞 Contact: ' + STORE_INFO.whatsapp);
     console.log('📧 Email: ' + STORE_INFO.email);
     
-    // Add CSS for notifications
-    const style = document.createElement('style');
-    style.textContent = `
-        @keyframes slideIn {
-            from { transform: translateX(100%); opacity: 0; }
-            to { transform: translateX(0); opacity: 1; }
-        }
-        @keyframes slideOut {
-            from { transform: translateX(0); opacity: 1; }
-            to { transform: translateX(100%); opacity: 0; }
-        }
-    `;
-    document.head.appendChild(style);
+    // Initialize default products
+    initializeDefaultProducts();
     
     loadDashboardStats();
     loadProducts();
     loadOrders();
     loadSettings();
     
-    // START INSTANT SYNC - REAL-TIME!
-    startInstantSync();
-    
-    // Auto backup setiap 1 menit
-    setInterval(autoBackup, 60000);
-    
-    console.log('⚡ INSTANT SYNC ACTIVATED - Orders update in 0.5 seconds!');
+    // Start auto refresh
+    startAutoRefresh();
 });
