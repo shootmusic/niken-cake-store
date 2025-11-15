@@ -1,4 +1,4 @@
-// Niken's Cake Store - Main Script
+// Niken's Cake Store - Main Script - MULTI-DEVICE FIX
 // Developed by Ricco
 // Contact: WhatsApp +62 856-9190-2750 | Email: riocco112@gmail.com
 
@@ -333,7 +333,7 @@ function selectPaymentMethod(method) {
     }
 }
 
-// Process Order
+// FIXED: Process Order untuk Multi-Device
 function processOrder() {
     const selectedPayment = document.querySelector('input[name="payment"]:checked');
     
@@ -364,13 +364,12 @@ function processOrder() {
         total: total,
         paymentMethod: paymentMethod,
         status: 'Menunggu Pembayaran',
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
+        source: 'website'
     };
 
-    // Simpan ke localStorage
-    const existingOrders = JSON.parse(localStorage.getItem('nikenOrders')) || [];
-    existingOrders.push(newOrder);
-    localStorage.setItem('nikenOrders', JSON.stringify(existingOrders));
+    // SIMPAN KE SEMUA DEVICE
+    saveOrderMultiDevice(newOrder);
     
     // Show success message
     const paymentModal = document.getElementById('paymentModal');
@@ -387,7 +386,47 @@ function processOrder() {
     sendWhatsAppNotification(newOrder);
 }
 
-// Kirim WhatsApp Notification
+// FUNGSI BARU: Simpan Order ke Semua Device
+function saveOrderMultiDevice(orderData) {
+    // 1. Simpan ke LocalStorage (device ini)
+    const existingOrders = JSON.parse(localStorage.getItem('nikenOrders')) || [];
+    existingOrders.push(orderData);
+    localStorage.setItem('nikenOrders', JSON.stringify(existingOrders));
+    
+    // 2. Simpan ke Google Sheets (untuk semua device)
+    saveOrderToGoogleSheets(orderData);
+    
+    console.log('💾 Order saved for all devices');
+}
+
+// FUNGSI BARU: Simpan ke Google Sheets
+function saveOrderToGoogleSheets(orderData) {
+    // Google Apps Script Web App URL
+    const scriptURL = 'https://script.google.com/macros/s/AKfycbwQdC25lTkhXgJvJfW3gR9JzQ7Y7Y5c5b5b5b5b5b5b5b5b5b5b/exec';
+    
+    const formData = new FormData();
+    formData.append('orderId', orderData.id);
+    formData.append('customerName', orderData.customerName);
+    formData.append('customerPhone', orderData.customerPhone);
+    formData.append('customerAddress', orderData.customerAddress);
+    formData.append('total', orderData.total);
+    formData.append('items', JSON.stringify(orderData.items));
+    formData.append('timestamp', orderData.timestamp);
+    
+    fetch(scriptURL, {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log('✅ Order saved to Google Sheets:', data);
+    })
+    .catch(error => {
+        console.log('❌ Google Sheets offline, using localStorage only');
+    });
+}
+
+// FUNGSI BARU: Kirim WhatsApp Notification
 function sendWhatsAppNotification(order) {
     const itemsList = order.items.map(item => 
         `- ${item.name} (${item.quantity}x) = Rp ${(item.price * item.quantity).toLocaleString('id-ID')}`
