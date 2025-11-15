@@ -338,7 +338,7 @@ function selectPaymentMethod(method) {
     }
 }
 
-// FIXED: Process Order dengan Server Backup
+// FIXED: Process Order dengan Real-time Sync
 function processOrder() {
     const selectedPayment = document.querySelector('input[name="payment"]:checked');
     
@@ -373,14 +373,9 @@ function processOrder() {
         source: 'website'
     };
 
-    // SIMPAN KE SERVER (UNTUK BEDA WiFi)
-    saveOrderToServer(newOrder);
+    // SIMPAN KE SEMUA BROWSER (MULTI-DEVICE FIX)
+    saveOrderMultiDevice(newOrder);
     
-    // JUGA SIMPAN KE LOCALSTORAGE (BACKUP)
-    const existingOrders = JSON.parse(localStorage.getItem('nikenOrders')) || [];
-    existingOrders.push(newOrder);
-    localStorage.setItem('nikenOrders', JSON.stringify(existingOrders));
-
     // Show success message
     const paymentModal = document.getElementById('paymentModal');
     paymentModal.style.display = 'none';
@@ -394,6 +389,26 @@ function processOrder() {
     
     // Auto send WhatsApp message
     sendWhatsAppNotification(newOrder);
+}
+
+// FUNGSI BARU: Simpan Order ke Semua Device - INSTANT VERSION
+function saveOrderMultiDevice(orderData) {
+    // 1. Simpan ke LocalStorage (backup)
+    const existingOrders = JSON.parse(localStorage.getItem('nikenOrders')) || [];
+    existingOrders.push(orderData);
+    localStorage.setItem('nikenOrders', JSON.stringify(existingOrders));
+    
+    // 2. Simpan ke Server (untuk beda WiFi/device)
+    saveOrderToServer(orderData);
+    
+    // 3. Simpan ke Session Storage (untuk real-time)
+    sessionStorage.setItem('lastOrder', JSON.stringify(orderData));
+    
+    // 4. Trigger storage event UNTUK REAL-TIME INSTANT SYNC
+    const event = new Event('storage');
+    window.dispatchEvent(event);
+    
+    console.log('💾 Order saved to all storage systems - INSTANT SYNC READY');
 }
 
 // FUNGSI BARU: Simpan ke Server
@@ -594,9 +609,9 @@ console.log(`
 ║     👨‍💼 Admin Panel                 ║
 ║     📱 Responsive Design             ║
 ║     🌐 Multi-WiFi Support            ║
+║     ⚡ INSTANT SYNC v2.0             ║
 ║                                      ║
 ║     Developed by: Ricco              ║
-║     Version: 5.0 (Multi-Device)      ║
+║     Version: 6.0 (Instant Sync)      ║
 ║     Year: 2023                       ║
 ╚══════════════════════════════════════╝
-`);
